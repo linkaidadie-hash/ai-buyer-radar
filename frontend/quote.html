@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI报价系统 - AI Buyer Radar</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css">
+  <script src="https://unpkg.com/vue@3.3.11/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+  <script src="https://unpkg.com/axios@1.6.2/dist/axios.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f7fa; min-height: 100vh; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 40px; }
+    .header h1 { font-size: 24px; margin-bottom: 5px; }
+    .header p { font-size: 14px; opacity: 0.9; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px 40px; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
+    .card-header { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; font-weight: 600; font-size: 16px; }
+    .card-body { padding: 20px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-item { margin-bottom: 15px; }
+    .form-label { font-size: 14px; color: #666; margin-bottom: 5px; display: block; }
+    .result-box { background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%); border-radius: 12px; padding: 20px; }
+    .result-main { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .result-item { flex: 1; text-align: center; padding: 15px; background: white; border-radius: 10px; margin: 0 5px; }
+    .result-item.fob { border-left: 4px solid #1890ff; }
+    .result-item.cif { border-left: 4px solid #52c41a; }
+    .result-label { font-size: 12px; color: #999; margin-bottom: 5px; }
+    .result-value { font-size: 28px; font-weight: bold; color: #333; }
+    .result-value.green { color: #52c41a; }
+    .detail-section { margin-top: 15px; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e8e8e8; font-size: 14px; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-row span:first-child { color: #666; }
+    .detail-row span:last-child { font-weight: 500; color: #333; }
+    .profit-tag { background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%); color: #52c41a; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; padding: 12px 30px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .product-select { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+    select, input[type="number"] { padding: 8px 12px; border: 1px solid #dcdfe6; border-radius: 6px; font-size: 14px; }
+    select { min-width: 200px; }
+    .tag { background: #f0f0f0; padding: 5px 10px; border-radius: 5px; font-size: 12px; margin-right: 5px; }
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+    .product-card { background: white; border: 1px solid #e8e8e8; border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s; }
+    .product-card:hover { border-color: #667eea; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2); transform: translateY(-2px); }
+    .product-name { font-weight: 600; margin-bottom: 8px; color: #333; }
+    .product-info { font-size: 13px; color: #666; }
+    .product-info div { margin-bottom: 3px; }
+    .empty-state { text-align: center; padding: 40px; color: #999; }
+    .shipping-info { background: #fffbe6; padding: 10px 15px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+    .tab { padding: 10px 20px; background: white; border: 1px solid #e8e8e8; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+    .tab.active { background: #667eea; color: white; border-color: #667eea; }
+    .quick-add { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .quick-chip { background: #ecf5ff; color: #1890ff; padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid #b3d8fd; }
+    .quick-chip:hover { background: #1890ff; color: white; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="header">
+      <h1>📦 AI报价助手</h1>
+      <p>AI Buyer Radar 轻量外贸报价系统 - FOB/CIF/DDP自动计算</p>
+    </div>
+    
+    <div class="container">
+      <div class="tabs">
+        <div class="tab" :class="{active: activeTab === 'products'}" @click="activeTab = 'products'">
+          📦 产品库
+        </div>
+        <div class="tab" :class="{active: activeTab === 'quote'}" @click="activeTab = 'quote'">
+          🔮 AI报价
+        </div>
+        <div class="tab" :class="{active: activeTab === 'orders'}" @click="activeTab = 'orders'">
+          📋 订单
+        </div>
+      </div>
+
+      <!-- 产品库 -->
+      <div v-if="activeTab === 'products'">
+        <div class="card">
+          <div class="card-header">产品列表 ({{ products.length }} 个产品)</div>
+          <div class="card-body">
+            <div class="products-grid">
+              <div class="product-card" v-for="p in products" :key="p.id" @click="selectProduct(p)">
+                <div class="product-name">{{ p.name_en }}</div>
+                <div class="product-info">
+                  <div>SKU: {{ p.sku }}</div>
+                  <div>成本: ¥{{ p.cost_price }}</div>
+                  <div>MOQ: {{ p.moq }} {{ p.unit }}</div>
+                  <div>利润率: {{ p.profit_rate }}%</div>
+                </div>
+                <div style="margin-top: 10px">
+                  <span class="tag">{{ p.category }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI报价 -->
+      <div v-if="activeTab === 'quote'" class="grid-2">
+        <div>
+          <div class="card">
+            <div class="card-header">📦 产品选择</div>
+            <div class="card-body">
+              <div v-for="(item, idx) in quoteItems" :key="idx" class="product-select">
+                <select v-model="item.product_id" @change="updateProductInfo(item)">
+                  <option value="">选择产品</option>
+                  <option v-for="p in products" :key="p.id" :value="p.id">
+                    {{ p.name_en }} ({{ p.sku }})
+                  </option>
+                </select>
+                <input type="number" v-model.number="item.quantity" min="1" placeholder="数量" style="width: 100px" @change="calcQuote">
+                <span v-if="item.product_id" style="color: #666; font-size: 13px">
+                  小计: ${{ getSubtotal(item) }}
+                </span>
+                <button v-if="quoteItems.length > 1" @click="removeItem(idx)" style="color: #ff4d4f; background: none; border: none; font-size: 18px; cursor: pointer;">×</button>
+              </div>
+              <button @click="addItem" style="background: #ecf5ff; border: 1px dashed #b3d8fd; padding: 8px 15px; border-radius: 6px; cursor: pointer; color: #1890ff; margin-top: 10px">
+                + 添加产品
+              </button>
+
+              <div style="margin-top: 20px">
+                <div class="form-label">快速添加</div>
+                <div class="quick-add">
+                  <span class="quick-chip" v-for="p in products.slice(0,5)" :key="p.id" @click="quickAdd(p)">
+                    {{ p.name_en }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">🚢 物流设置</div>
+            <div class="card-body">
+              <div class="form-item">
+                <div class="form-label">目的国</div>
+                <select v-model="quoteForm.country" @change="calcQuote" style="width: 100%">
+                  <option v-for="c in countries" :key="c.code" :value="c.name">{{ c.name }} ({{ c.port }})</option>
+                </select>
+              </div>
+              <div class="form-item">
+                <div class="form-label">运输方式</div>
+                <label style="margin-right: 20px">
+                  <input type="radio" v-model="quoteForm.shipping_method" value="sea" @change="calcQuote"> 海运
+                </label>
+                <label>
+                  <input type="radio" v-model="quoteForm.shipping_method" value="air" @change="calcQuote"> 空运
+                </label>
+              </div>
+              <div class="form-item">
+                <div class="form-label">价格条款</div>
+                <select v-model="quoteForm.price_term" style="width: 100%">
+                  <option value="FOB Shanghai">FOB Shanghai</option>
+                  <option value="CIF">CIF 目的港</option>
+                  <option value="DDP">DDP 完税后</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-primary" @click="calcQuote" :disabled="!canCalc">
+            {{ calcLoading ? '计算中...' : '🔮 AI计算报价' }}
+          </button>
+        </div>
+
+        <div>
+          <div class="card" v-if="quoteResult">
+            <div class="card-header">💰 报价结果</div>
+            <div class="card-body">
+              <div class="result-box">
+                <div class="result-main">
+                  <div class="result-item fob">
+                    <div class="result-label">FOB Shanghai</div>
+                    <div class="result-value">${{ formatNumber(quoteResult.summary.total_fob) }}</div>
+                  </div>
+                  <div class="result-item cif">
+                    <div class="result-label">CIF {{ quoteResult.logistics.port_to }}</div>
+                    <div class="result-value green">${{ formatNumber(quoteResult.cif.cif_value) }}</div>
+                  </div>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 15px">
+                  <span class="profit-tag">💰 利润率: {{ quoteResult.summary.profit_rate }}%</span>
+                  <span class="profit-tag" style="margin-left: 10px">毛利润: ¥{{ formatNumber(quoteResult.summary.profit_cny) }}</span>
+                </div>
+
+                <div class="detail-section">
+                  <div style="font-weight: 600; margin-bottom: 10px">📦 运费明细</div>
+                  <div class="detail-row">
+                    <span>FOB货值</span>
+                    <span>${{ formatNumber(quoteResult.cif.fob_value) }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span>海运费</span>
+                    <span>${{ formatNumber(quoteResult.logistics.shipping_cost) }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span>港口杂费</span>
+                    <span>${{ quoteResult.logistics.port_fee }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span>保险费 (1%)</span>
+                    <span>${{ quoteResult.cif.insurance.toFixed(2) }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span>总体积</span>
+                    <span>{{ quoteResult.logistics.total_volume_m3 }} m³</span>
+                  </div>
+                  <div class="detail-row">
+                    <span>总重量</span>
+                    <span>{{ quoteResult.logistics.total_weight_kg }} kg</span>
+                  </div>
+                </div>
+
+                <div class="shipping-info" v-if="currentShippingRate">
+                  🚢 运输信息: {{ currentShippingRate.port }} | 运输时间: {{ currentShippingRate.transit_days }}
+                </div>
+
+                <div style="margin-top: 20px; text-align: center">
+                  <button @click="generateQuotation" style="background: #52c41a; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 15px; cursor: pointer; margin-right: 10px">
+                    📄 生成报价单
+                  </button>
+                  <button @click="createOrder" style="background: #1890ff; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 15px; cursor: pointer">
+                    📋 创建订单
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" v-else>
+            <div class="card-header">💰 报价结果</div>
+            <div class="card-body">
+              <div class="empty-state">
+                <div style="font-size: 48px; margin-bottom: 15px">📊</div>
+                <div>选择产品和目的国，点击"AI计算报价"</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 订单列表 -->
+      <div v-if="activeTab === 'orders'">
+        <div class="card">
+          <div class="card-header">订单列表 ({{ orders.length }})</div>
+          <div class="card-body">
+            <table style="width: 100%; border-collapse: collapse">
+              <thead>
+                <tr style="background: #fafafa">
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e8e8e8">订单号</th>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e8e8e8">客户</th>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e8e8e8">国家</th>
+                  <th style="padding: 12px; text-align: right; border-bottom: 1px solid #e8e8e8">金额</th>
+                  <th style="padding: 12px; text-align: center; border-bottom: 1px solid #e8e8e8">状态</th>
+                  <th style="padding: 12px; text-align: left; border-bottom: 1px solid #e8e8e8">创建时间</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="o in orders" :key="o.id" style="border-bottom: 1px solid #f0f0f0">
+                  <td style="padding: 12px">{{ o.order_no }}</td>
+                  <td style="padding: 12px">{{ o.buyer_name }}</td>
+                  <td style="padding: 12px">{{ o.buyer_country }}</td>
+                  <td style="padding: 12px; text-align: right">${{ o.total_amount?.toLocaleString() }}</td>
+                  <td style="padding: 12px; text-align: center">
+                    <span :style="{background: statusColor(o.status), color: 'white', padding: '4px 10px', borderRadius: '12px', fontSize: '12px'}">
+                      {{ statusLabel(o.status) }}
+                    </span>
+                  </td>
+                  <td style="padding: 12px">{{ o.created_at }}</td>
+                </tr>
+                <tr v-if="orders.length === 0">
+                  <td colspan="6" style="padding: 40px; text-align: center; color: #999">暂无订单</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted } = Vue
+    const { ElMessage } = ElementPlus
+
+    createApp({
+      setup() {
+        const API = 'http://localhost:8001/api/quote'
+        const activeTab = ref('quote')
+        const products = ref([])
+        const orders = ref([])
+        const countries = ref([])
+        const calcLoading = ref(false)
+        
+        const quoteItems = ref([
+          { product_id: '', quantity: 100 }
+        ])
+        
+        const quoteForm = ref({
+          country: 'Nigeria',
+          shipping_method: 'sea',
+          price_term: 'FOB Shanghai'
+        })
+        
+        const quoteResult = ref(null)
+        const currentShippingRate = ref(null)
+
+        const canCalc = computed(() => {
+          return quoteItems.value.some(i => i.product_id)
+        })
+
+        function formatNumber(n) {
+          return n ? n.toLocaleString() : '0'
+        }
+
+        function getSubtotal(item) {
+          const p = products.value.find(x => x.id === item.product_id)
+          if (!p) return 0
+          const price = p.cost_price * (1 + p.profit_rate / 100) * 7.2
+          return (price * item.quantity).toFixed(2)
+        }
+
+        function addItem() {
+          quoteItems.value.push({ product_id: '', quantity: 100 })
+        }
+
+        function removeItem(idx) {
+          quoteItems.value.splice(idx, 1)
+        }
+
+        function selectProduct(p) {
+          quoteItems.value = [{ product_id: p.id, quantity: p.moq || 100 }]
+          activeTab.value = 'quote'
+          setTimeout(calcQuote, 100)
+        }
+
+        function quickAdd(p) {
+          const existing = quoteItems.value.find(i => i.product_id === p.id)
+          if (existing) {
+            existing.quantity += p.moq || 100
+          } else {
+            quoteItems.value.push({ product_id: p.id, quantity: p.moq || 100 })
+          }
+          calcQuote()
+        }
+
+        function updateProductInfo(item) {
+          calcQuote()
+        }
+
+        async function calcQuote() {
+          if (!canCalc.value) return
+          calcLoading.value = true
+          try {
+            const { data } = await axios.post(`${API}/calculate`, {
+              items: quoteItems.value.filter(i => i.product_id),
+              country: quoteForm.value.country,
+              shipping_method: quoteForm.value.shipping_method,
+              price_term: quoteForm.value.price_term
+            })
+            quoteResult.value = data
+            
+            const { data: rates } = await axios.get(`${API}/shipping/rates?country=${quoteForm.value.country}`)
+            currentShippingRate.value = rates.find(r => r.shipping_method === quoteForm.value.shipping_method)
+          } catch (e) {
+            ElMessage.error('计算失败: ' + (e.response?.data?.detail || e.message))
+          } finally {
+            calcLoading.value = false
+          }
+        }
+
+        async function generateQuotation() {
+          const buyerName = prompt('客户名称:')
+          if (!buyerName) return
+          try {
+            const { data } = await axios.post(`${API}/quotations`, {
+              buyer_name: buyerName,
+              buyer_country: quoteForm.value.country,
+              items: quoteItems.value.filter(i => i.product_id),
+              country: quoteForm.value.country,
+              shipping_method: quoteForm.value.shipping_method
+            })
+            ElMessage.success(`报价单 ${data.quotation_no} 生成成功!`)
+          } catch (e) {
+            ElMessage.error('生成失败')
+          }
+        }
+
+        async function createOrder() {
+          const buyerName = prompt('客户名称:')
+          if (!buyerName) return
+          try {
+            const { data } = await axios.post(`${API}/orders`, {
+              buyer_name: buyerName,
+              buyer_country: quoteForm.value.country,
+              items: quoteItems.value.filter(i => i.product_id),
+              total_amount: quoteResult.value.summary.total_fob
+            })
+            ElMessage.success(`订单 ${data.order_no} 创建成功!`)
+            loadOrders()
+          } catch (e) {
+            ElMessage.error('创建失败')
+          }
+        }
+
+        async function loadProducts() {
+          try {
+            const { data } = await axios.get(`${API}/products`)
+            products.value = data
+          } catch (e) {
+            console.error(e)
+          }
+        }
+
+        async function loadOrders() {
+          try {
+            const { data } = await axios.get(`${API}/orders`)
+            orders.value = data
+          } catch (e) {
+            console.error(e)
+          }
+        }
+
+        async function loadCountries() {
+          try {
+            const { data } = await axios.get(`${API}/countries`)
+            countries.value = data
+          } catch (e) {
+            console.error(e)
+          }
+        }
+
+        function statusLabel(s) {
+          const labels = { inquiry: '询盘', quote: '报价', sample: '打样', payment: '付款', production: '生产', shipped: '发货', delivered: '到港', completed: '完成', cancelled: '取消' }
+          return labels[s] || s
+        }
+
+        function statusColor(s) {
+          const colors = { inquiry: '#909399', quote: '#409eff', sample: '#e6a23c', payment: '#e6a23c', production: '#409eff', shipped: '#67c23a', delivered: '#67c23a', completed: '#909399', cancelled: '#f56c6c' }
+          return colors[s] || '#909399'
+        }
+
+        onMounted(() => {
+          loadProducts()
+          loadOrders()
+          loadCountries()
+        })
+
+        return {
+          activeTab, products, orders, countries, calcLoading,
+          quoteItems, quoteForm, quoteResult, currentShippingRate, canCalc,
+          formatNumber, getSubtotal, addItem, removeItem, selectProduct, quickAdd,
+          updateProductInfo, calcQuote, generateQuotation, createOrder,
+          statusLabel, statusColor
+        }
+      }
+    }).use(ElementPlus).mount('#app')
+  </script>
+</body>
+</html>

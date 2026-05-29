@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI海外采购商雷达 - 找货Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+    
+    /* 头部 */
+    .header {
+      background: #001529;
+      color: white;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo { font-size: 18px; font-weight: bold; }
+    .nav { display: flex; gap: 20px; }
+    .nav span { cursor: pointer; padding: 6px 12px; border-radius: 4px; }
+    .nav span.active { background: #1890ff; }
+    
+    /* 主内容 */
+    .main {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      min-height: calc(100vh - 100px);
+    }
+    
+    /* 左侧搜索 */
+    .search-panel {
+      width: 280px;
+      background: white;
+      border-radius: 10px;
+      padding: 24px;
+    }
+    .search-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+    
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d9d9d9;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+    .form-group input:focus, .form-group select:focus {
+      border-color: #1890ff;
+      box-shadow: 0 0 0 2px rgba(24,144,255,0.2);
+    }
+    
+    .quick-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .quick-tags span {
+      padding: 4px 10px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .quick-tags span:hover { background: #e6f7ff; color: #1890ff; }
+    
+    .btn-search {
+      width: 100%;
+      background: #1890ff;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn-search:hover { background: #40a9ff; }
+    .btn-search:disabled { background: #d9d9d9; cursor: not-allowed; }
+    
+    /* 中间结果 */
+    .results-panel {
+      flex: 1;
+      background: white;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .results-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .results-title { font-size: 14px; color: #333; }
+    .results-title strong { color: #1890ff; font-size: 18px; }
+    
+    .buyer-list { flex: 1; overflow-y: auto; padding: 12px; }
+    
+    .buyer-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .buyer-card:hover { border-color: #1890ff; }
+    .buyer-card.selected { border-color: #1890ff; background: #f0f7ff; }
+    
+    .buyer-name { font-weight: 500; color: #333; margin-bottom: 4px; }
+    .buyer-meta { font-size: 12px; color: #999; }
+    
+    .btn-whatsapp {
+      background: #25D366;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: #999;
+    }
+    .empty-icon { font-size: 64px; margin-bottom: 16px; }
+    .empty-text { font-size: 14px; }
+    
+    /* 右侧详情 */
+    .detail-panel {
+      width: 300px;
+      background: white;
+      border-radius: 10px;
+      padding: 24px;
+    }
+    .detail-panel.hidden { display: none; }
+    
+    .detail-section { margin-bottom: 24px; }
+    .detail-section:last-child { margin-bottom: 0; }
+    .detail-name { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 8px; }
+    .detail-meta { display: flex; gap: 12px; font-size: 12px; color: #999; }
+    .section-label { font-size: 12px; color: #999; margin-bottom: 8px; }
+    
+    .contact-item { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 8px; }
+    
+    .score-box { display: flex; align-items: baseline; gap: 4px; margin-bottom: 10px; }
+    .score-num { font-size: 32px; font-weight: 600; color: #52c41a; }
+    .score-label { font-size: 12px; color: #999; }
+    
+    .score-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .score-tags span { padding: 2px 8px; background: #f6ffed; color: #52c41a; border-radius: 4px; font-size: 11px; }
+    
+    .btn-contact-whatsapp {
+      width: 100%;
+      background: #25D366;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-contact-whatsapp:hover { background: #2ecc71; }
+    
+    /* 底部 */
+    .footer {
+      background: #fafafa;
+      border-top: 1px solid #f0f0f0;
+      padding: 10px 24px;
+      display: flex;
+      gap: 24px;
+      font-size: 12px;
+      color: #999;
+    }
+    
+    /* 加载动画 */
+    .loading { text-align: center; padding: 40px; color: #999; }
+  </style>
+</head>
+<body>
+  <!-- 头部 -->
+  <div class="header">
+    <div class="logo">🌍 AI采购商雷达</div>
+    <div class="nav">
+      <span class="active">🔍 搜索</span>
+      <span>📦 采购商库</span>
+      <span>💬 AI联系</span>
+      <span>📋 CRM</span>
+    </div>
+    <div style="font-size:12px; opacity:0.7;">演示账号</div>
+  </div>
+  
+  <!-- 主内容 -->
+  <div class="main">
+    <!-- 左侧搜索 -->
+    <div class="search-panel">
+      <div class="search-title">🔍 搜索采购商</div>
+      
+      <div class="form-group">
+        <label>产品关键词</label>
+        <input type="text" id="productInput" placeholder="如：防晒衣、发饰、饰品..." />
+        <div class="quick-tags">
+          <span onclick="setProduct('防晒衣')">防晒衣</span>
+          <span onclick="setProduct('发饰')">发饰</span>
+          <span onclick="setProduct('饰品')">饰品</span>
+          <span onclick="setProduct('服装')">服装</span>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label>目标市场</label>
+        <select id="countrySelect">
+          <option value="">全球</option>
+          <option value="Nigeria">🇳🇬 尼日利亚</option>
+          <option value="Ghana">🇬🇭 加纳</option>
+          <option value="Kenya">🇰🇪 肯尼亚</option>
+          <option value="South Africa">🇿🇦 南非</option>
+          <option value="UAE">🇦🇪 迪拜</option>
+          <option value="Saudi Arabia">🇸🇦 沙特</option>
+          <option value="Egypt">🇪🇬 埃及</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>采购商类型</label>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" checked /> 进口商 Importer
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" checked /> 批发商 Wholesaler
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;">
+            <input type="checkbox" checked /> 分销商 Distributor
+          </label>
+        </div>
+      </div>
+      
+      <button class="btn-search" id="searchBtn" onclick="doSearch()">
+        🔍 开始搜索
+      </button>
+    </div>
+    
+    <!-- 中间结果 -->
+    <div class="results-panel">
+      <div class="results-header">
+        <div class="results-title">
+          找到 <strong id="resultCount">0</strong> 个目标采购商
+        </div>
+      </div>
+      
+      <div class="buyer-list" id="buyerList">
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-text">输入产品关键词，开始搜索全球采购商</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 右侧详情 -->
+    <div class="detail-panel hidden" id="detailPanel">
+      <div class="search-title">📋 采购商详情</div>
+      
+      <div class="detail-section">
+        <div class="detail-name" id="detailName">-</div>
+        <div class="detail-meta" id="detailMeta">-</div>
+      </div>
+      
+      <div class="detail-section">
+        <div class="section-label">联系方式</div>
+        <div class="contact-item">📱 <span id="detailPhone">-</span></div>
+        <div class="contact-item">📍 <span id="detailAddress">-</span></div>
+      </div>
+      
+      <div class="detail-section">
+        <div class="section-label">AI评分</div>
+        <div class="score-box">
+          <span class="score-num" id="detailScore">-</span>
+          <span class="score-label">/ 100</span>
+        </div>
+        <div class="score-tags" id="detailTags">
+          <span>✅ 真实采购商</span>
+          <span>✅ 批发商</span>
+          <span>✅ 有电话</span>
+        </div>
+      </div>
+      
+      <div class="detail-section">
+        <div class="section-label">一键联系</div>
+        <button class="btn-contact-whatsapp" onclick="openWhatsApp()">
+          💬 发送 WhatsApp 消息
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 底部 -->
+  <div class="footer">
+    <span>📊 共找到 <strong>79</strong> 个采购商</span>
+    <span>💬 可直接联系 <strong>76</strong> 个</span>
+    <span>⭐ 平均评分 <strong>4.5</strong></span>
+  </div>
+  
+  <script>
+    let selectedBuyer = null;
+    
+    function setProduct(p) {
+      document.getElementById('productInput').value = p;
+    }
+    
+    function doSearch() {
+      const product = document.getElementById('productInput').value;
+      if (!product) {
+        alert('请输入产品关键词');
+        return;
+      }
+      
+      const btn = document.getElementById('searchBtn');
+      btn.disabled = true;
+      btn.textContent = '🔄 搜索中...';
+      
+      // 模拟搜索结果
+      setTimeout(() => {
+        const results = [
+          {
+            company: 'Wigmore Trading LTD',
+            country: 'Nigeria',
+            city: 'Lagos',
+            phone: '+234 815 906 2455',
+            rating: '4.6',
+            score: 85,
+            type: 'Wholesaler',
+            address: 'Lagos, Nigeria'
+          },
+          {
+            company: 'ALNOORAS TRADING',
+            country: 'UAE',
+            city: 'Dubai',
+            phone: '+971 52 379 1144',
+            rating: '4.6',
+            score: 82,
+            type: 'Wholesaler',
+            address: 'Dubai, UAE'
+          },
+          {
+            company: 'NACCOS RETAIL & WHOLESALE',
+            country: 'Tanzania',
+            city: 'Dar es Salaam',
+            phone: '+255 743 777 124',
+            rating: '5.0',
+            score: 88,
+            type: 'Wholesaler',
+            address: 'Dar es Salaam, Tanzania'
+          },
+          {
+            company: "Kristy's Wholesale Hair Shop",
+            country: 'Ghana',
+            city: 'Accra',
+            phone: '+233 24 167 5700',
+            rating: '5.0',
+            score: 90,
+            type: 'Wholesaler',
+            address: 'Accra, Ghana'
+          },
+          {
+            company: 'ZarWholeSale',
+            country: 'South Africa',
+            city: 'Johannesburg',
+            phone: '+27 81 737 5646',
+            rating: '5.0',
+            score: 87,
+            type: 'Wholesaler',
+            address: 'Johannesburg, South Africa'
+          }
+        ];
+        
+        renderResults(results);
+        btn.disabled = false;
+        btn.textContent = '🔍 开始搜索';
+      }, 1500);
+    }
+    
+    function renderResults(results) {
+      const container = document.getElementById('buyerList');
+      document.getElementById('resultCount').textContent = results.length;
+      
+      if (results.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <div class="empty-text">没有找到采购商，试试其他关键词</div>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = results.map((r, i) => `
+        <div class="buyer-card" onclick="selectBuyer(${i})" id="buyer-${i}">
+          <div>
+            <div class="buyer-name">${r.company}</div>
+            <div class="buyer-meta">
+              ${r.country} / ${r.city} &nbsp;&nbsp; ⭐ ${r.rating}
+            </div>
+          </div>
+          <button class="btn-whatsapp" onclick="event.stopPropagation(); openWhatsAppByPhone('${r.phone}')">
+            💬 联系
+          </button>
+        </div>
+      `).join('');
+      
+      // 保存结果到全局
+      window.searchResults = results;
+    }
+    
+    function selectBuyer(index) {
+      // 移除之前的选中
+      document.querySelectorAll('.buyer-card').forEach(c => c.classList.remove('selected'));
+      
+      // 选中当前
+      document.getElementById(`buyer-${index}`).classList.add('selected');
+      
+      // 显示详情
+      const buyer = window.searchResults[index];
+      selectedBuyer = buyer;
+      
+      document.getElementById('detailPanel').classList.remove('hidden');
+      document.getElementById('detailName').textContent = buyer.company;
+      document.getElementById('detailMeta').textContent = `${buyer.country} / ${buyer.city} / ⭐ ${buyer.rating}`;
+      document.getElementById('detailPhone').textContent = buyer.phone;
+      document.getElementById('detailAddress').textContent = buyer.address;
+      document.getElementById('detailScore').textContent = buyer.score;
+    }
+    
+    function openWhatsAppByPhone(phone) {
+      const clean = phone.replace(/\D/g, '');
+      window.open(`https://wa.me/${clean}`, '_blank');
+    }
+    
+    function openWhatsApp() {
+      if (!selectedBuyer) return;
+      openWhatsAppByPhone(selectedBuyer.phone);
+    }
+  </script>
+</body>
+</html>
