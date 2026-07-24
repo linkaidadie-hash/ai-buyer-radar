@@ -9,17 +9,21 @@ import csv
 import io
 import json
 import uuid
+import logging
 from pathlib import Path
 
 from services.database import (
     get_conn, create_import_batch, update_import_batch, 
-    batch_create_buyers, add_shipment
+    batch_create_buyers, add_shipment, get_data_source
 )
 from services.sources import (
     create_source, get_all_sources, 
     VolzaSource, PanjivaSource, ImportGeniusSource
 )
+from services.sources.google_maps import GoogleMapsError
 from services.ai_service import AIScorer
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -29,6 +33,7 @@ class APISearchRequest(BaseModel):
     country: Optional[str] = None
     source: str = "google_maps"
     limit: int = 100
+    save_to_db: bool = True
 
 
 class BatchScoreRequest(BaseModel):
@@ -143,43 +148,189 @@ def _parse_manual_csv(rows: List[Dict]) -> List:
     return list(buyers.values())
 
 
+def _load_source_config(source_name: str) -> Dict[str, Any]:
+    """从数据库加载数据源配置"""
+    source_record = get_data_source(source_name)
+    if not source_record:
+        return {}
+    config = source_record.get('config', {})
+    if isinstance(config, str):
+        try:
+            config = json.loads(config)
+        except (json.JSONDecodeError, TypeError):
+            config = {}
+    return config if isinstance(config, dict) else {}
+
+
+def _deduplicate_buyers(conn, buyers_data: List[Dict[str, Any]]) -> tuple:
+    """
+    去重逻辑，返回 (new_buyers, duplicate_count)
+    去重优先级：
+    1. source + source_id/place_id
+    2. website 域名
+    3. company_name + country + city
+    4. phone
+    """
+    new_buyers = []
+    duplicates = 0
+
+    for buyer in buyers_data:
+        is_dup = False
+
+        # 1. source + source_id
+        source_id = buyer.get('source_id')
+        source = buyer.get('source', '')
+        if source_id and source:
+            cursor = conn.execute(
+                "SELECT id FROM buyers WHERE source = ? AND source_url LIKE ?",
+                (source, f"%{source_id}%")
+            )
+            if cursor.fetchone():
+                is_dup = True
+
+        # 2. website 域名
+        if not is_dup and buyer.get('website'):
+            domain = buyer['website'].replace('https://', '').replace('http://', '').replace('www.', '').split('/')[0]
+            if domain:
+                cursor = conn.execute(
+                    "SELECT id FROM buyers WHERE website LIKE ?",
+                    (f"%{domain}%",)
+                )
+                if cursor.fetchone():
+                    is_dup = True
+
+        # 3. company_name + country + city
+        if not is_dup and buyer.get('company_name'):
+            company = buyer['company_name'].strip().lower()
+            country = (buyer.get('country') or '').strip().lower()
+            city = (buyer.get('city') or '').strip().lower()
+            cursor = conn.execute(
+                "SELECT id FROM buyers WHERE LOWER(company_name) = ? AND LOWER(COALESCE(country,'')) = ? AND LOWER(COALESCE(city,'')) = ?",
+                (company, country, city)
+            )
+            if cursor.fetchone():
+                is_dup = True
+
+        # 4. phone
+        if not is_dup and buyer.get('phone'):
+            phone_clean = buyer['phone'].replace(' ', '').replace('-', '')
+            if len(phone_clean) >= 7:
+                cursor = conn.execute(
+                    "SELECT id FROM buyers WHERE REPLACE(REPLACE(phone, ' ', ''), '-', '') = ?",
+                    (phone_clean,)
+                )
+                if cursor.fetchone():
+                    is_dup = True
+
+        if is_dup:
+            duplicates += 1
+        else:
+            new_buyers.append(buyer)
+
+    return new_buyers, duplicates
+
+
 @router.post("/api-search")
 async def api_search(request: APISearchRequest):
     """
-    通过API搜索采购商
-    source: google_maps / linkedin / zoominfo / apollo
+    通过API搜索采购商（实时外部搜索）
+    source: google_maps / serpapi / zoominfo / apollo
     """
-    source_instance = create_source(request.source)
-    
+    # 从数据库加载数据源配置
+    source_config = _load_source_config(request.source)
+
+    # 创建数据源实例（传入配置）
+    source_instance = create_source(request.source, source_config)
+
     if not source_instance:
-        raise HTTPException(status_code=400, detail=f"不支持的数据源: {request.source}")
-    
+        return {
+            'success': False,
+            'source': request.source,
+            'error_code': 'SOURCE_NOT_FOUND',
+            'message': f'不支持的数据源: {request.source}',
+            'detail': f'可用数据源: {", ".join(get_all_sources().keys())}'
+        }
+
     # 验证配置
     valid, msg = source_instance.validate_config()
     if not valid:
-        raise HTTPException(status_code=400, detail=msg)
-    
-    # 搜索
-    results = source_instance.search(
-        keyword=request.keyword,
-        country=request.country,
-        limit=request.limit
-    )
-    
-    # 导入数据库
-    if results:
-        with get_conn() as conn:
-            success, failed = batch_create_buyers(
-                conn, [b.to_dict() for b in results]
-            )
-        
         return {
-            'found': len(results),
-            'imported': success,
-            'data': [b.to_dict() for b in results[:10]]  # 返回前10条预览
+            'success': False,
+            'source': request.source,
+            'error_code': 'CONFIG_INVALID',
+            'message': msg,
+            'detail': '请前往设置页面配置对应数据源的 API Key'
         }
-    
-    return {'found': 0, 'imported': 0, 'data': []}
+
+    # 执行搜索
+    try:
+        # 使用异步搜索（如果适配器支持）
+        if hasattr(source_instance, 'search_async'):
+            results = await source_instance.search_async(
+                keyword=request.keyword,
+                country=request.country,
+                limit=request.limit
+            )
+        else:
+            import asyncio
+            loop = asyncio.get_event_loop()
+            results = await loop.run_in_executor(
+                None,
+                lambda: source_instance.search(
+                    keyword=request.keyword,
+                    country=request.country,
+                    limit=request.limit
+                )
+            )
+    except GoogleMapsError as e:
+        return {
+            'success': False,
+            'source': request.source,
+            'error_code': e.error_code,
+            'message': e.message,
+            'detail': e.detail
+        }
+    except Exception as e:
+        logger.error(f"[api-search] {request.source} error: {e}")
+        return {
+            'success': False,
+            'source': request.source,
+            'error_code': 'SEARCH_FAILED',
+            'message': f'搜索失败: {str(e)}',
+            'detail': ''
+        }
+
+    # 搜索成功但无结果
+    if not results:
+        return {
+            'success': True,
+            'source': request.source,
+            'found': 0,
+            'imported': 0,
+            'duplicates': 0,
+            'data': [],
+            'message': '本次搜索成功，但未找到匹配商户'
+        }
+
+    # 去重 + 保存
+    imported = 0
+    duplicates = 0
+
+    if request.save_to_db:
+        buyers_dicts = [b.to_dict() for b in results]
+        with get_conn() as conn:
+            new_buyers, duplicates = _deduplicate_buyers(conn, buyers_dicts)
+            if new_buyers:
+                imported, _ = batch_create_buyers(conn, new_buyers)
+
+    return {
+        'success': True,
+        'source': request.source,
+        'found': len(results),
+        'imported': imported,
+        'duplicates': duplicates,
+        'data': [b.to_dict() for b in results],
+    }
 
 
 @router.post("/batch-score")
@@ -250,24 +401,55 @@ async def list_batches(limit: int = 20):
 
 @router.get("/sources")
 async def list_sources():
-    """可用数据源列表"""
-    sources = get_all_sources()
+    """可用数据源列表（含配置状态）"""
+    sources_registry = get_all_sources()
     result = []
-    
+
     with get_conn() as conn:
-        from services.database import rows_to_list
         cursor = conn.execute("SELECT * FROM data_sources ORDER BY priority")
         rows = cursor.fetchall()
-        
+
         for row in rows:
             r = dict(row)
+            config = {}
             if r.get('config'):
                 try:
-                    r['config'] = json.loads(r['config'])
+                    config = json.loads(r['config'])
                 except:
-                    r['config'] = {}
-            result.append(r)
-    
+                    config = {}
+
+            # 判断是否已配置（有api_key）
+            configured = bool(config.get('api_key') or config.get('client_id'))
+
+            # 隐藏完整key
+            safe_config = {}
+            for k, v in config.items():
+                if 'key' in k.lower() or 'secret' in k.lower():
+                    safe_config[k] = (v[:6] + '***') if v and len(v) > 6 else ('***' if v else '')
+                else:
+                    safe_config[k] = v
+
+            # 只返回支持搜索的数据源
+            source_class = sources_registry.get(r['name'])
+            supports_search = False
+            if source_class:
+                try:
+                    instance = source_class(config)
+                    # 检查search方法是否有实际实现（不是返回空列表的）
+                    supports_search = r['name'] in ('google_maps', 'serpapi', 'zoominfo', 'apollo')
+                except:
+                    pass
+
+            result.append({
+                'name': r['name'],
+                'display_name': r.get('display_name', r['name']),
+                'api_type': r.get('api_type', 'api'),
+                'enabled': bool(r.get('enabled', 1)),
+                'configured': configured,
+                'supports_search': supports_search,
+                'config': safe_config,
+            })
+
     return result
 
 

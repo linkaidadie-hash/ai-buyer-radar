@@ -53,6 +53,23 @@ def init_db():
         with get_conn() as conn:
             conn.executescript(schema)
     
+    # 迁移：为已有数据库添加 source_id 列
+    with get_conn() as conn:
+        cursor = conn.execute("PRAGMA table_info(buyers)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if 'source_id' not in columns:
+            conn.execute("ALTER TABLE buyers ADD COLUMN source_id TEXT")
+        
+        # 确保 serpapi 和 snov 数据源存在
+        conn.execute("""
+            INSERT OR IGNORE INTO data_sources (name, display_name, api_type, config, priority)
+            VALUES ('serpapi', 'SerpApi Google Maps', 'api', '{}', 25)
+        """)
+        conn.execute("""
+            INSERT OR IGNORE INTO data_sources (name, display_name, api_type, config, priority)
+            VALUES ('snov', 'Snov.io', 'api', '{}', 91)
+        """)
+    
     print(f"[DB] 数据库初始化完成: {get_db_path()}")
 
 
@@ -90,16 +107,17 @@ def create_buyer(conn: sqlite3.Connection, data: Dict[str, Any]) -> int:
     sql = """
     INSERT INTO buyers (company_name, country, city, industry, products, hs_code,
         website, email, phone, whatsapp, linkedin, facebook,
-        source, source_url, ai_score, ai_level, buyer_type, risk_level,
+        source, source_id, source_url, ai_score, ai_level, buyer_type, risk_level,
         status, notes, import_batch, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """
     cursor = conn.execute(sql, (
         data['company_name'], data.get('country'), data.get('city'),
         data.get('industry'), data.get('products'), data.get('hs_code'),
         data.get('website'), data.get('email'), data.get('phone'),
         data.get('whatsapp'), data.get('linkedin'), data.get('facebook'),
-        data.get('source'), data.get('source_url'), data.get('ai_score'),
+        data.get('source'), data.get('source_id'), data.get('source_url'),
+        data.get('ai_score'),
         data.get('ai_level'), data.get('buyer_type'), data.get('risk_level'),
         data.get('status'), data.get('notes'), data.get('import_batch'),
         data.get('created_at'), data.get('updated_at')

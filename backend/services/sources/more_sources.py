@@ -503,9 +503,13 @@ class ClearbitSource(BaseDataSource):
 
 def get_all_sources() -> Dict[str, type]:
     """获取所有可用数据源"""
+    from .google_maps import GoogleMapsSource
+    from .serpapi import SerpApiSource
+    from .volza import VolzaSource
     return {
         'volza': VolzaSource,
         'google_maps': GoogleMapsSource,
+        'serpapi': SerpApiSource,
         'hunter': HunterSource,
         'panjiva': PanjivaSource,
         'importgenius': ImportGeniusSource,
@@ -513,6 +517,7 @@ def get_all_sources() -> Dict[str, type]:
         'zoominfo': ZoomInfoSource,
         'apollo': ApolloSource,
         'clearbit': ClearbitSource,
+        'snov': SnovSource,
     }
 
 

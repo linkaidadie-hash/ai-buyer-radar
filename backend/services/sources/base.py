@@ -23,6 +23,7 @@ class BuyerData:
     linkedin: Optional[str] = None
     facebook: Optional[str] = None
     source: str = ""
+    source_id: Optional[str] = None
     source_url: Optional[str] = None
     
     def __post_init__(self):
@@ -46,6 +47,7 @@ class BuyerData:
             'linkedin': self.linkedin,
             'facebook': self.facebook,
             'source': self.source,
+            'source_id': self.source_id,
             'source_url': self.source_url,
         }
 

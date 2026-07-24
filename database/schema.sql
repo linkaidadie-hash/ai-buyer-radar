@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS buyers (
     linkedin        TEXT,
     facebook        TEXT,
     source          TEXT,           -- 数据来源: volza/google/hunter/panjiva等
+    source_id       TEXT,           -- 数据源原始ID (如Google place_id)
     source_url      TEXT,           -- 原始链接
     ai_score        INTEGER DEFAULT 0,  -- AI评分 1-100
     ai_level        TEXT DEFAULT 'C',   -- A/B/C/D 客户等级
@@ -124,6 +125,7 @@ CREATE TABLE IF NOT EXISTS data_sources (
 INSERT OR IGNORE INTO data_sources (name, display_name, api_type, config, priority) VALUES
 ('volza', 'Volza', 'csv', '{}', 10),
 ('google_maps', 'Google Maps API', 'api', '{}', 20),
+('serpapi', 'SerpApi Google Maps', 'api', '{}', 25),
 ('hunter', 'Hunter.io', 'api', '{}', 30),
 ('panjiva', 'Panjiva', 'csv', '{}', 40),
 ('importgenius', 'ImportGenius', 'csv', '{}', 50),
@@ -131,6 +133,7 @@ INSERT OR IGNORE INTO data_sources (name, display_name, api_type, config, priori
 ('zoominfo', 'ZoomInfo', 'api', '{}', 70),
 ('apollo', 'Apollo.io', 'api', '{}', 80),
 ('clearbit', 'Clearbit', 'api', '{}', 90),
+('snov', 'Snov.io', 'api', '{}', 91),
 ('openai', 'OpenAI', 'api', '{}', 95),
 ('deepseek', 'DeepSeek', 'api', '{}', 96);
 
