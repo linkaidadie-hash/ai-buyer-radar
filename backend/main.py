@@ -33,14 +33,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 静态文件 - 前端dist + 导出目录
-FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
+# 导出目录
 EXPORT_DIR = Path(__file__).parent.parent / "exports"
-
-if FRONTEND_DIST.exists():
-    app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
-
-
 EXPORT_DIR.mkdir(exist_ok=True)
 app.mount("/exports", StaticFiles(directory=str(EXPORT_DIR)), name="exports")
 
@@ -74,14 +68,15 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-@app.get("/")
-async def root():
-    return {"message": "AI Buyer Radar API", "version": "1.0.0"}
-
-
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+# 前端静态文件（必须在所有API路由之后注册，避免拦截API请求）
+FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
+if FRONTEND_DIST.exists():
+    app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
 
 
 if __name__ == "__main__":
