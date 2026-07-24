@@ -126,3 +126,74 @@ async def get_api_usage(days: int = 7):
     """API使用统计"""
     from services.database import get_api_usage as db_get_api_usage
     return db_get_api_usage(days=days)
+
+
+@router.post("/datasource/{name}/test")
+async def test_datasource(name: str):
+    """测试数据源连接"""
+    import time
+    import httpx
+    from services.database import get_data_source
+
+    ds = get_data_source(name)
+    if not ds:
+        return {"success": False, "message": f"数据源 '{name}' 不存在", "latency_ms": 0}
+
+    config = ds.get('config', {})
+    if isinstance(config, str):
+        try:
+            config = json.loads(config)
+        except (json.JSONDecodeError, TypeError):
+            config = {}
+
+    start = time.time()
+
+    if name == 'serpapi':
+        api_key = config.get('api_key', '')
+        if not api_key:
+            return {"success": False, "message": "SerpApi API Key未配置", "latency_ms": 0}
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                resp = await client.get(
+                    "https://serpapi.com/search.json",
+                    params={"q": "test", "engine": "google_maps", "api_key": api_key, "limit": 1}
+                )
+            latency_ms = int((time.time() - start) * 1000)
+            if resp.status_code == 200:
+                return {"success": True, "message": "连接成功", "latency_ms": latency_ms}
+            else:
+                return {"success": False, "message": f"HTTP {resp.status_code}", "latency_ms": latency_ms}
+        except Exception as e:
+            latency_ms = int((time.time() - start) * 1000)
+            return {"success": False, "message": f"连接失败: {str(e)}", "latency_ms": latency_ms}
+
+    elif name == 'google_maps':
+        api_key = config.get('api_key', '')
+        if not api_key:
+            return {"success": False, "message": "Google Maps API Key未配置", "latency_ms": 0}
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                resp = await client.get(
+                    "https://maps.googleapis.com/maps/api/place/textsearch/json",
+                    params={"query": "test", "key": api_key}
+                )
+            latency_ms = int((time.time() - start) * 1000)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get('status') in ('OK', 'ZERO_RESULTS'):
+                    return {"success": True, "message": "连接成功", "latency_ms": latency_ms}
+                else:
+                    return {"success": False, "message": f"API返回: {data.get('status')}", "latency_ms": latency_ms}
+            else:
+                return {"success": False, "message": f"HTTP {resp.status_code}", "latency_ms": latency_ms}
+        except Exception as e:
+            latency_ms = int((time.time() - start) * 1000)
+            return {"success": False, "message": f"连接失败: {str(e)}", "latency_ms": latency_ms}
+
+    else:
+        # 通用验证：检查配置是否存在
+        latency_ms = int((time.time() - start) * 1000)
+        if config:
+            return {"success": True, "message": "配置存在", "latency_ms": latency_ms}
+        else:
+            return {"success": False, "message": "数据源未配置", "latency_ms": latency_ms}

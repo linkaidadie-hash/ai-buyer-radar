@@ -60,8 +60,27 @@
       </div>
     </div>
 
+    <!-- 错误状态 -->
+    <div v-if="loadError && !loading" class="card error-state">
+      <el-icon :size="48" color="#94a3b8"><WarningFilled /></el-icon>
+      <h3>数据加载失败</h3>
+      <p>请检查网络连接或稍后重试</p>
+      <el-button type="primary" @click="loadData">重新加载</el-button>
+    </div>
+
+    <!-- 空数据引导 -->
+    <div v-else-if="!loading && !loadError && pagination.total === 0 && buyers.length === 0" class="card empty-state">
+      <el-icon :size="48" color="#94a3b8"><FolderOpened /></el-icon>
+      <h3>暂无采购商</h3>
+      <p>搜索新商户，或导入已有客户数据</p>
+      <div class="empty-actions">
+        <el-button type="primary" @click="$router.push('/search')">搜索新商户</el-button>
+        <el-button @click="$router.push('/import')">导入客户数据</el-button>
+      </div>
+    </div>
+
     <!-- 表格 -->
-    <div class="card table-card" v-loading="loading">
+    <div v-else class="card table-card" v-loading="loading">
       <el-table
         :data="buyers"
         @row-click="viewDetail"
@@ -157,10 +176,11 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { buyersAPI, searchAPI, exportAPI } from '../services/api'
 import { ElMessage } from 'element-plus'
-import { Upload, Download, Search, Right, MapLocation, CircleCheck, Star, Connection, Location } from '@element-plus/icons-vue'
+import { Upload, Download, Search, Right, MapLocation, CircleCheck, Star, Connection, Location, WarningFilled, FolderOpened } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const loading = ref(false)
+const loadError = ref(false)
 const buyers = ref([])
 const countries = ref([])
 const sources = ref([])
@@ -225,6 +245,7 @@ function tableRowClassName({ row }) {
 
 async function loadData() {
   loading.value = true
+  loadError.value = false
   try {
     const params = {
       page: pagination.value.page,
@@ -236,6 +257,7 @@ async function loadData() {
     pagination.value.total = res.total || 0
   } catch (e) {
     console.error(e)
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -431,5 +453,36 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   border-top: 1px solid #f1f5f9;
+}
+
+/* ====== 错误/空状态 ====== */
+.error-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.error-state h3,
+.empty-state h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #334155;
+  margin: 16px 0 8px;
+}
+
+.error-state p,
+.empty-state p {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-bottom: 24px;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 12px;
 }
 </style>

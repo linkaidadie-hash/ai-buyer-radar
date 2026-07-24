@@ -58,6 +58,25 @@
 
       <!-- 主内容 -->
       <el-main class="main-panel">
+        <!-- 顶部栏 -->
+        <div class="top-header" v-if="showLayout">
+          <div class="top-header-left"></div>
+          <div class="top-header-right">
+            <el-dropdown trigger="click" @command="handleUserCommand">
+              <span class="user-info">
+                <el-icon><UserFilled /></el-icon>
+                <span class="username">{{ currentUsername }}</span>
+                <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="password">修改密码</el-dropdown-item>
+                  <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+        </div>
         <router-view />
       </el-main>
     </el-container>
@@ -65,13 +84,41 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { HomeFilled, User, Upload, Search, ChatDotRound, Message, Download, Setting } from '@element-plus/icons-vue'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { HomeFilled, User, Upload, Search, ChatDotRound, Message, Download, Setting, UserFilled, ArrowDown } from '@element-plus/icons-vue'
+import { authAPI } from './services/api'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()
+const router = useRouter()
 const activeMenu = computed(() => route.path)
-const showLayout = computed(() => route.path !== '/')
+const showLayout = computed(() => route.path !== '/login')
+const currentUsername = ref(localStorage.getItem('username') || '用户')
+
+async function handleUserCommand(command) {
+  if (command === 'logout') {
+    try {
+      await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+      try {
+        await authAPI.logout()
+      } catch (e) {
+        // 即使logout接口失败也清除本地token
+      }
+      localStorage.removeItem('token')
+      localStorage.removeItem('username')
+      router.push('/login')
+    } catch (e) {
+      // 用户取消
+    }
+  } else if (command === 'password') {
+    ElMessage.info('修改密码功能开发中')
+  }
+}
 </script>
 
 <style>
@@ -225,6 +272,45 @@ body {
   padding: 24px;
   overflow-y: auto;
   background: var(--bg-page);
+}
+
+/* ====== 顶部栏 ====== */
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.top-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: background 0.2s;
+  color: #475569;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.user-info:hover {
+  background: #f1f5f9;
+}
+
+.user-info .username {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ====== 通用卡片 ====== */

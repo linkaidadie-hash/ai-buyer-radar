@@ -134,6 +134,7 @@ INSERT OR IGNORE INTO data_sources (name, display_name, api_type, config, priori
 ('apollo', 'Apollo.io', 'api', '{}', 80),
 ('clearbit', 'Clearbit', 'api', '{}', 90),
 ('snov', 'Snov.io', 'api', '{}', 91),
+('2gis', '2GIS', 'api', '{}', 92),
 ('openai', 'OpenAI', 'api', '{}', 95),
 ('deepseek', 'DeepSeek', 'api', '{}', 96);
 
@@ -204,6 +205,30 @@ CREATE TABLE IF NOT EXISTS system_config (
     value           TEXT,
     description     TEXT,
     updated_at      TEXT DEFAULT (datetime('now'))
+);
+
+-- ============================================================
+-- AI供应商表 (ai_providers)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS ai_providers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    display_name TEXT,
+    provider_type TEXT NOT NULL,
+    enabled INTEGER DEFAULT 0,
+    is_default INTEGER DEFAULT 0,
+    api_key TEXT DEFAULT '',
+    base_url TEXT,
+    model TEXT,
+    backup_model TEXT,
+    timeout INTEGER DEFAULT 30,
+    max_retries INTEGER DEFAULT 2,
+    config_json TEXT DEFAULT '{}',
+    last_test_status TEXT,
+    last_test_message TEXT,
+    last_test_at TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
 );
 
 -- ============================================================

@@ -69,6 +69,35 @@ def init_db():
             INSERT OR IGNORE INTO data_sources (name, display_name, api_type, config, priority)
             VALUES ('snov', 'Snov.io', 'api', '{}', 91)
         """)
+        # 确保 2gis 数据源存在
+        conn.execute("""
+            INSERT OR IGNORE INTO data_sources (name, display_name, api_type, config, priority)
+            VALUES ('2gis', '2GIS', 'api', '{}', 92)
+        """)
+        
+        # 迁移：ai_providers 表
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS ai_providers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL,
+                display_name TEXT,
+                provider_type TEXT NOT NULL,
+                enabled INTEGER DEFAULT 0,
+                is_default INTEGER DEFAULT 0,
+                api_key TEXT DEFAULT '',
+                base_url TEXT,
+                model TEXT,
+                backup_model TEXT,
+                timeout INTEGER DEFAULT 30,
+                max_retries INTEGER DEFAULT 2,
+                config_json TEXT DEFAULT '{}',
+                last_test_status TEXT,
+                last_test_message TEXT,
+                last_test_at TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
     
     print(f"[DB] 数据库初始化完成: {get_db_path()}")
 

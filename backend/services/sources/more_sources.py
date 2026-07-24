@@ -506,6 +506,7 @@ def get_all_sources() -> Dict[str, type]:
     from .google_maps import GoogleMapsSource
     from .serpapi import SerpApiSource
     from .volza import VolzaSource
+    from .twogis import TwoGisSource
     return {
         'volza': VolzaSource,
         'google_maps': GoogleMapsSource,
@@ -518,6 +519,7 @@ def get_all_sources() -> Dict[str, type]:
         'apollo': ApolloSource,
         'clearbit': ClearbitSource,
         'snov': SnovSource,
+        '2gis': TwoGisSource,
     }
 
 

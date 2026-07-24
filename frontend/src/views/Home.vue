@@ -28,104 +28,127 @@
       </div>
     </div>
 
-    <!-- 统计卡片 -->
-    <div class="stats-grid" v-loading="loading">
-      <div class="stat-card" v-for="(stat, idx) in statCards" :key="idx" :style="{ '--delay': idx * 0.1 + 's' }">
-        <div class="stat-glow" :style="{ background: stat.glow }"></div>
-        <div class="stat-icon-wrap" :style="{ background: stat.bg }">
-          <el-icon size="22" :style="{ color: stat.color }">
-            <component :is="stat.icon" />
-          </el-icon>
-        </div>
-        <div class="stat-body">
-          <div class="stat-value">{{ stat.value }}</div>
-          <div class="stat-label">{{ stat.label }}</div>
-        </div>
-        <div class="stat-trend" v-if="stat.trend">
-          <el-icon><Top /></el-icon>
-          {{ stat.trend }}
-        </div>
+    <!-- 错误状态 -->
+    <div v-if="loadError && !loading" class="error-state card">
+      <el-icon :size="48" color="#94a3b8"><WarningFilled /></el-icon>
+      <h3>数据暂时无法加载</h3>
+      <p>请检查网络连接或稍后重试</p>
+      <el-button type="primary" @click="retryData">重新加载</el-button>
+    </div>
+
+    <!-- 空数据引导 -->
+    <div v-else-if="!loading && !loadError && (stats.total_buyers === 0)" class="empty-state card">
+      <el-icon :size="48" color="#94a3b8"><FolderOpened /></el-icon>
+      <h3>还没有采购商数据</h3>
+      <p>开始搜索新商户，或导入已有客户名单</p>
+      <div class="empty-actions">
+        <el-button type="primary" @click="$router.push('/search')">搜索第一个市场</el-button>
+        <el-button @click="$router.push('/import')">导入客户名单</el-button>
       </div>
     </div>
 
-    <!-- 图表 + 信息区域 -->
-    <div class="charts-row">
-      <!-- 状态分布图 -->
-      <div class="card chart-card">
-        <div class="card-header">
-          <h3>
-            <span class="card-icon">📈</span>
-            采购商状态分布
-          </h3>
-        </div>
-        <div ref="statusChartRef" class="chart-container" v-loading="loading"></div>
-      </div>
-
-      <!-- 国家分布图 -->
-      <div class="card chart-card">
-        <div class="card-header">
-          <h3>
-            <span class="card-icon">🌍</span>
-            国家分布 TOP5
-          </h3>
-        </div>
-        <div ref="countryChartRef" class="chart-container" v-loading="loading"></div>
-      </div>
-
-      <!-- AI等级分布 -->
-      <div class="card chart-card">
-        <div class="card-header">
-          <h3>
-            <span class="card-icon">🏆</span>
-            AI等级分布
-          </h3>
-        </div>
-        <div ref="levelChartRef" class="chart-container" v-loading="loading"></div>
-      </div>
-    </div>
-
-    <!-- 最近采购商列表 -->
-    <div class="card">
-      <div class="card-header">
-        <h3>
-          <span class="card-icon">🛒</span>
-          最近添加的采购商
-        </h3>
-        <el-button text @click="$router.push('/buyers')">
-          查看全部 <el-icon><Right /></el-icon>
-        </el-button>
-      </div>
-      <div class="recent-list" v-if="recentBuyers.length">
-        <div class="recent-item" v-for="buyer in recentBuyers" :key="buyer.id" @click="$router.push(`/buyers/${buyer.id}`)">
-          <div class="recent-avatar" :style="{ background: getAvatarBg(buyer.company_name) }">
-            {{ getInitials(buyer.company_name) }}
+    <!-- 正常内容 -->
+    <template v-else>
+      <!-- 统计卡片 -->
+      <div class="stats-grid" v-loading="loading">
+        <div class="stat-card" v-for="(stat, idx) in statCards" :key="idx" :style="{ '--delay': idx * 0.1 + 's' }">
+          <div class="stat-glow" :style="{ background: stat.glow }"></div>
+          <div class="stat-icon-wrap" :style="{ background: stat.bg }">
+            <el-icon size="22" :style="{ color: stat.color }">
+              <component :is="stat.icon" />
+            </el-icon>
           </div>
-          <div class="recent-info">
-            <div class="recent-name">{{ buyer.company_name }}</div>
-            <div class="recent-meta">{{ buyer.country }} · {{ buyer.industry || '未知行业' }}</div>
+          <div class="stat-body">
+            <div class="stat-value">{{ stat.value }}</div>
+            <div class="stat-label">{{ stat.label }}</div>
           </div>
-          <div class="recent-right">
-            <el-tag :type="levelType(buyer.ai_level)" size="small" effect="plain">
-              {{ buyer.ai_level || 'C' }}级
-            </el-tag>
-            <span :class="`status-tag status-${buyer.status}`">{{ statusLabel(buyer.status) }}</span>
+          <div class="stat-trend" v-if="stat.trend">
+            <el-icon><Top /></el-icon>
+            {{ stat.trend }}
           </div>
         </div>
       </div>
-      <el-empty v-else description="暂无数据，开始导入你的第一个采购商吧" />
-    </div>
+
+      <!-- 图表 + 信息区域 -->
+      <div class="charts-row">
+        <!-- 状态分布图 -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>
+              <span class="card-icon">📈</span>
+              采购商状态分布
+            </h3>
+          </div>
+          <div ref="statusChartRef" class="chart-container" v-loading="loading"></div>
+        </div>
+
+        <!-- 国家分布图 -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>
+              <span class="card-icon">🌍</span>
+              国家分布 TOP5
+            </h3>
+          </div>
+          <div ref="countryChartRef" class="chart-container" v-loading="loading"></div>
+        </div>
+
+        <!-- AI等级分布 -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h3>
+              <span class="card-icon">🏆</span>
+              AI等级分布
+            </h3>
+          </div>
+          <div ref="levelChartRef" class="chart-container" v-loading="loading"></div>
+        </div>
+      </div>
+
+      <!-- 最近采购商列表 -->
+      <div class="card">
+        <div class="card-header">
+          <h3>
+            <span class="card-icon">🛒</span>
+            最近添加的采购商
+          </h3>
+          <el-button text @click="$router.push('/buyers')">
+            查看全部 <el-icon><Right /></el-icon>
+          </el-button>
+        </div>
+        <div class="recent-list" v-if="recentBuyers.length">
+          <div class="recent-item" v-for="buyer in recentBuyers" :key="buyer.id" @click="$router.push(`/buyers/${buyer.id}`)">
+            <div class="recent-avatar" :style="{ background: getAvatarBg(buyer.company_name) }">
+              {{ getInitials(buyer.company_name) }}
+            </div>
+            <div class="recent-info">
+              <div class="recent-name">{{ buyer.company_name }}</div>
+              <div class="recent-meta">{{ buyer.country }} · {{ buyer.industry || '未知行业' }}</div>
+            </div>
+            <div class="recent-right">
+              <el-tag :type="levelType(buyer.ai_level)" size="small" effect="plain">
+                {{ buyer.ai_level || 'C' }}级
+              </el-tag>
+              <span :class="`status-tag status-${buyer.status}`">{{ statusLabel(buyer.status) }}</span>
+            </div>
+          </div>
+        </div>
+        <el-empty v-else description="暂无数据，开始导入你的第一个采购商吧" />
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { buyersAPI } from '../services/api'
-import { User, Star, Message, Warning, Upload, Search, PriceTag, Top, Right } from '@element-plus/icons-vue'
+import { User, Star, Message, Warning, Upload, Search, PriceTag, Top, Right, WarningFilled, FolderOpened } from '@element-plus/icons-vue'
 
 // 动态引入 echarts（懒加载避免打包体积问题）
 let echarts = null
 
 const loading = ref(true)
+const loadError = ref(false)
 const stats = ref({})
 const recentBuyers = ref([])
 const statusChartRef = ref(null)
@@ -218,14 +241,25 @@ const statCards = computed(() => [
 ])
 
 async function fetchData() {
+  loading.value = true
+  loadError.value = false
   try {
     const data = await buyersAPI.stats()
     stats.value = data
     recentBuyers.value = data.recent_buyers || []
   } catch (e) {
     console.error(e)
+    loadError.value = true
   } finally {
     loading.value = false
+  }
+}
+
+async function retryData() {
+  await fetchData()
+  if (!loadError.value) {
+    await new Promise(r => setTimeout(r, 100))
+    initCharts()
   }
 }
 
@@ -591,5 +625,36 @@ onUnmounted(() => {
   .hero-content h1 { font-size: 28px; }
   .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
   .stat-value { font-size: 24px; }
+}
+
+/* ====== 错误/空状态 ====== */
+.error-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.error-state h3,
+.empty-state h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #334155;
+  margin: 16px 0 8px;
+}
+
+.error-state p,
+.empty-state p {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-bottom: 24px;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 12px;
 }
 </style>

@@ -4,23 +4,48 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
-const BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api'
+const BASE_URL = import.meta.env.VITE_API_BASE || '/api'
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 30000,
+  timeout: 60000,
   headers: { 'Content-Type': 'application/json' }
 })
+
+// 错误消息去重：相同错误5秒内只提示一次
+const lastErrorMap = new Map()
+function showErrorDebounced(msg) {
+  const now = Date.now()
+  const last = lastErrorMap.get(msg)
+  if (last && now - last < 5000) return
+  lastErrorMap.set(msg, now)
+  ElMessage.error(msg)
+}
 
 // 响应拦截器
 api.interceptors.response.use(
   response => response.data,
   error => {
+    if (error.response?.status === 401) {
+      // 未登录或token过期，跳转登录
+      localStorage.removeItem('token')
+      window.location.href = '/login'
+      return Promise.reject(error)
+    }
     const msg = error.response?.data?.detail || error.message || '请求失败'
-    ElMessage.error(msg)
+    showErrorDebounced(msg)
     return Promise.reject(error)
   }
 )
+
+// 请求拦截器 - 附加token
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
 
 // ============================================================
 // 采购商管理
@@ -228,9 +253,55 @@ export const configAPI = {
     return api.put(`/config/datasource/${name}`, data)
   },
   
+  // 测试数据源连接
+  testDatasource(name) {
+    return api.post(`/config/datasource/${name}/test`)
+  },
+  
   // API使用统计
   apiUsage(days) {
     return api.get('/config/api/usage', { params: { days } })
+  }
+}
+
+// ============================================================
+// AI模型供应商管理
+// ============================================================
+
+export const aiProvidersAPI = {
+  list() {
+    return api.get('/config/ai/providers')
+  },
+  create(data) {
+    return api.post('/config/ai/providers', data)
+  },
+  update(id, data) {
+    return api.put(`/config/ai/providers/${id}`, data)
+  },
+  delete(id) {
+    return api.delete(`/config/ai/providers/${id}`)
+  },
+  test(id) {
+    return api.post(`/config/ai/providers/${id}/test`)
+  },
+  setDefault(id) {
+    return api.put(`/config/ai/providers/${id}/default`)
+  }
+}
+
+// ============================================================
+// 认证
+// ============================================================
+
+export const authAPI = {
+  login(username, password) {
+    return api.post('/auth/login', { username, password })
+  },
+  logout() {
+    return api.post('/auth/logout')
+  },
+  check() {
+    return api.get('/auth/check')
   }
 }
 
