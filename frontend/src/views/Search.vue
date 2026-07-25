@@ -14,21 +14,21 @@
     <div class="card" v-if="searchMode === 'online'">
       <el-form :model="onlineForm" label-width="100px">
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :xs="24" :sm="12">
             <el-form-item label="产品关键词">
               <el-input v-model="onlineForm.keyword" placeholder="如: jewelry wholesaler, rubber necklace importer" clearable />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :xs="24" :sm="12">
             <el-form-item label="国家/地区">
               <el-input v-model="onlineForm.country" placeholder="如: UAE, 沙特, Vietnam" clearable />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="数据源">
-              <el-select v-model="onlineForm.source" placeholder="选择数据源">
+              <el-select v-model="onlineForm.source" placeholder="选择数据源" style="width:100%">
                 <el-option
                   v-for="s in availableSources"
                   :key="s.name"
@@ -42,12 +42,12 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="返回数量">
               <el-input-number v-model="onlineForm.limit" :min="5" :max="100" :step="5" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="保存到本地">
               <el-switch v-model="onlineForm.save_to_db" />
             </el-form-item>
@@ -86,19 +86,19 @@
     <div class="card" v-if="searchMode === 'local'">
       <el-form :model="localForm" label-width="100px">
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :xs="24" :sm="12">
             <el-form-item label="关键词">
               <el-input v-model="localForm.keyword" placeholder="产品/公司/行业" clearable />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :xs="24" :sm="12">
             <el-form-item label="国家">
               <el-input v-model="localForm.country" placeholder="如: UAE, Saudi Arabia" clearable />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="AI等级">
               <el-select v-model="localForm.ai_level" placeholder="全部" clearable>
                 <el-option label="A级" value="A" />
@@ -108,7 +108,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="状态">
               <el-select v-model="localForm.status" placeholder="全部" clearable>
                 <el-option label="新增" value="new" />
@@ -118,7 +118,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :xs="24" :sm="8">
             <el-form-item label="AI评分">
               <el-input-number v-model="localForm.ai_score_min" :min="0" :max="100" placeholder="最低分" />
             </el-form-item>
@@ -377,5 +377,19 @@ onMounted(loadSources)
 }
 .link:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .search-page h2 {
+    font-size: 18px;
+  }
+
+  .el-form-item {
+    margin-bottom: 12px;
+  }
+
+  .result-summary {
+    font-size: 13px;
+  }
 }
 </style>

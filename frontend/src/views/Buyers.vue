@@ -485,4 +485,42 @@ onMounted(() => {
   display: flex;
   gap: 12px;
 }
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .filter-row {
+    flex-direction: column;
+  }
+
+  .search-input {
+    min-width: 100%;
+  }
+
+  .filter-row .el-select {
+    width: 100%;
+  }
+
+  .company-name {
+    max-width: 120px;
+  }
+
+  .pagination-wrap {
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .empty-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .empty-actions .el-button {
+    width: 100%;
+  }
+}
 </style>

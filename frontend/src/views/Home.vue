@@ -611,11 +611,26 @@ onUnmounted(() => {
   .charts-row { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 640px) {
-  .hero-section { padding: 32px 20px; }
-  .hero-content h1 { font-size: 28px; }
-  .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-  .stat-value { font-size: 24px; }
+@media (max-width: 768px) {
+  .hero-section { padding: 28px 16px; border-radius: 14px; }
+  .hero-content h1 { font-size: 24px; }
+  .hero-subtitle { font-size: 14px; }
+  .hero-desc { font-size: 12px; margin-bottom: 20px; }
+  .quick-actions { flex-direction: column; gap: 8px; }
+  .quick-actions .el-button { width: 100%; padding: 10px 20px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 14px; gap: 10px; }
+  .stat-value { font-size: 22px; }
+  .stat-icon-wrap { width: 38px; height: 38px; }
+  .charts-row { grid-template-columns: 1fr; gap: 12px; }
+  .chart-container { height: 180px; }
+  .recent-item { padding: 10px 2px; }
+  .recent-name { font-size: 13px; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .hero-content h1 { font-size: 20px; }
 }
 
 /* ====== 错误/空状态 ====== */

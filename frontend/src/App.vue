@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <el-container>
-      <!-- 侧边栏 -->
+      <!-- 侧边栏 (桌面端) -->
       <el-aside width="240px" v-if="showLayout" class="aside-panel">
         <div class="logo-section">
           <div class="logo-icon">🛒</div>
@@ -60,7 +60,9 @@
       <el-main class="main-panel">
         <!-- 顶部栏 -->
         <div class="top-header" v-if="showLayout">
-          <div class="top-header-left"></div>
+          <div class="top-header-left">
+            <span class="mobile-logo">🛒 Buyer Radar</span>
+          </div>
           <div class="top-header-right">
             <el-dropdown trigger="click" @command="handleUserCommand">
               <span class="user-info">
@@ -80,6 +82,30 @@
         <router-view />
       </el-main>
     </el-container>
+
+    <!-- 移动端底部导航 -->
+    <nav class="mobile-nav" v-if="showLayout">
+      <router-link to="/" class="nav-item" :class="{ active: activeMenu === '/' }">
+        <el-icon><HomeFilled /></el-icon>
+        <span>首页</span>
+      </router-link>
+      <router-link to="/buyers" class="nav-item" :class="{ active: activeMenu === '/buyers' }">
+        <el-icon><User /></el-icon>
+        <span>客户</span>
+      </router-link>
+      <router-link to="/search" class="nav-item" :class="{ active: activeMenu === '/search' }">
+        <el-icon><Search /></el-icon>
+        <span>搜索</span>
+      </router-link>
+      <router-link to="/import" class="nav-item" :class="{ active: activeMenu === '/import' }">
+        <el-icon><Upload /></el-icon>
+        <span>导入</span>
+      </router-link>
+      <router-link to="/settings" class="nav-item" :class="{ active: activeMenu === '/settings' }">
+        <el-icon><Setting /></el-icon>
+        <span>设置</span>
+      </router-link>
+    </nav>
   </div>
 </template>
 
@@ -440,9 +466,139 @@ body {
 }
 
 /* ====== 响应式 ====== */
+.mobile-logo {
+  display: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.mobile-nav {
+  display: none;
+}
+
 @media (max-width: 1024px) {
   .aside-panel {
     width: 200px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .app-container .el-container {
+    flex-direction: column;
+  }
+
+  .aside-panel {
+    display: none !important;
+  }
+
+  .main-panel {
+    padding: 12px;
+    padding-bottom: 72px;
+    overflow: visible;
+  }
+
+  .mobile-logo {
+    display: block;
+  }
+
+  .top-header {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+
+  .card {
+    padding: 16px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+  }
+
+  .card-header {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+
+  /* 底部导航栏 */
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
+    z-index: 1000;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .mobile-nav .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    text-decoration: none;
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .mobile-nav .nav-item .el-icon {
+    font-size: 20px;
+  }
+
+  .mobile-nav .nav-item.active {
+    color: #6366f1;
+  }
+
+  /* 表格横向滚动 */
+  .el-table {
+    font-size: 12px;
+  }
+
+  /* 分页简化 */
+  .pagination-wrap .el-pagination,
+  .pagination .el-pagination {
+    justify-content: center;
+  }
+
+  .el-pagination .el-pagination__sizes,
+  .el-pagination .el-pagination__jump {
+    display: none !important;
+  }
+
+  /* 筛选栏 */
+  .filter-bar {
+    gap: 8px;
+  }
+
+  .filter-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-row .el-select {
+    width: 100%;
+  }
+
+  /* 弹窗适配 */
+  .el-dialog {
+    width: 92vw !important;
+    margin: 5vh auto !important;
+  }
+
+  .el-dialog__body {
+    padding: 12px 16px;
   }
 }
 </style>
