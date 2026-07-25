@@ -121,6 +121,60 @@ async def update_datasource(name: str, data: Dict[str, Any]):
     return {"message": "更新成功"}
 
 
+class DataSourceCreate(BaseModel):
+    name: str
+    display_name: str
+    api_type: str = "api"
+    config: Optional[Dict[str, Any]] = None
+    priority: int = 100
+
+
+@router.post("/datasource")
+async def create_datasource(data: DataSourceCreate):
+    """添加自定义数据源"""
+    from services.database import get_conn
+    import re
+
+    # 验证name格式
+    if not re.match(r'^[a-z0-9_]+$', data.name):
+        raise HTTPException(status_code=400, detail="数据源名称只能包含小写字母、数字和下划线")
+
+    with get_conn() as conn:
+        # 检查是否已存在
+        existing = conn.execute(
+            "SELECT id FROM data_sources WHERE name = ?", (data.name,)
+        ).fetchone()
+        if existing:
+            raise HTTPException(status_code=409, detail=f"数据源 '{data.name}' 已存在")
+
+        config_str = json.dumps(data.config or {})
+        conn.execute(
+            "INSERT INTO data_sources (name, display_name, api_type, config, enabled, priority) VALUES (?, ?, ?, ?, 1, ?)",
+            (data.name, data.display_name, data.api_type, config_str, data.priority)
+        )
+
+    return {"message": f"数据源 '{data.display_name}' 添加成功", "name": data.name}
+
+
+@router.delete("/datasource/{name}")
+async def delete_datasource(name: str):
+    """删除自定义数据源"""
+    from services.database import get_conn
+
+    # 内置数据源不允许删除
+    builtin = {'google_maps', 'serpapi', 'hunter', 'volza', 'panjiva', 'importgenius',
+               'linkedin', 'zoominfo', 'apollo', 'clearbit', 'snov', '2gis'}
+    if name in builtin:
+        raise HTTPException(status_code=403, detail="内置数据源不可删除")
+
+    with get_conn() as conn:
+        cursor = conn.execute("DELETE FROM data_sources WHERE name = ?", (name,))
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="数据源不存在")
+
+    return {"message": "删除成功"}
+
+
 @router.get("/api/usage")
 async def get_api_usage(days: int = 7):
     """API使用统计"""

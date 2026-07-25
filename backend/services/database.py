@@ -421,6 +421,12 @@ def get_stats() -> Dict[str, Any]:
         cursor = conn.execute("SELECT AVG(ai_score) FROM buyers WHERE ai_score > 0")
         stats['avg_ai_score'] = round(cursor.fetchone()[0] or 0, 1)
         
+        # 最近添加的采购商
+        cursor = conn.execute(
+            "SELECT id, company_name, country, industry, ai_level, status FROM buyers ORDER BY created_at DESC LIMIT 10"
+        )
+        stats['recent_buyers'] = [dict(row) for row in cursor.fetchall()]
+        
         return stats
 
 

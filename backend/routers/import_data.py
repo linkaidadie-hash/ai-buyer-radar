@@ -429,16 +429,8 @@ async def list_sources():
                 else:
                     safe_config[k] = v
 
-            # 只返回支持搜索的数据源
-            source_class = sources_registry.get(r['name'])
-            supports_search = False
-            if source_class:
-                try:
-                    instance = source_class(config)
-                    # 检查search方法是否有实际实现（不是返回空列表的）
-                    supports_search = r['name'] in ('google_maps', 'serpapi', 'zoominfo', 'apollo')
-                except:
-                    pass
+            # 判断是否支持搜索（在注册表中有实现类即可）
+            supports_search = r['name'] in sources_registry
 
             result.append({
                 'name': r['name'],

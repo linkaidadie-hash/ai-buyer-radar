@@ -140,12 +140,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { ref, onMounted, computed, onUnmounted, nextTick } from 'vue'
+import * as echarts from 'echarts'
 import { buyersAPI } from '../services/api'
 import { User, Star, Message, Warning, Upload, Search, PriceTag, Top, Right, WarningFilled, FolderOpened } from '@element-plus/icons-vue'
-
-// 动态引入 echarts（懒加载避免打包体积问题）
-let echarts = null
 
 const loading = ref(true)
 const loadError = ref(false)
@@ -258,13 +256,13 @@ async function fetchData() {
 async function retryData() {
   await fetchData()
   if (!loadError.value) {
-    await new Promise(r => setTimeout(r, 100))
+    await nextTick()
     initCharts()
   }
 }
 
 function initCharts() {
-  if (!echarts || !statusChartRef.value) return
+  if (!statusChartRef.value) return
 
   // 状态饼图
   statusChart = echarts.init(statusChartRef.value)
@@ -335,15 +333,8 @@ function initCharts() {
 }
 
 onMounted(async () => {
-  try {
-    echarts = (await import('echarts')).default
-  } catch (e) {
-    console.warn('echarts not available:', e)
-  }
-
   await fetchData()
-
-  await new Promise(r => setTimeout(r, 100))
+  await nextTick()
   initCharts()
 })
 

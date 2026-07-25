@@ -77,6 +77,9 @@
         <div class="card">
           <div class="card-header">
             <h3>数据源列表</h3>
+            <el-button type="primary" size="small" @click="openAddDatasource">
+              添加数据源
+            </el-button>
           </div>
 
           <el-table :data="datasources" v-loading="loadingDatasources" stripe>
@@ -84,13 +87,6 @@
             <el-table-column prop="api_type" label="类型" width="100">
               <template #default="{ row }">
                 <el-tag size="small">{{ row.api_type }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="支持搜索" width="90" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.supports_search ? 'success' : 'info'" size="small">
-                  {{ row.supports_search ? '是' : '否' }}
-                </el-tag>
               </template>
             </el-table-column>
             <el-table-column label="已配置" width="90" align="center">
@@ -117,10 +113,17 @@
                 <span v-else style="color: #94a3b8; font-size: 12px;">未测试</span>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="180" align="center">
+            <el-table-column label="操作" width="240" align="center">
               <template #default="{ row }">
                 <el-button size="small" @click="openDatasourceConfig(row)">配置</el-button>
                 <el-button size="small" :loading="row._testing" @click="testDatasource(row)">测试连接</el-button>
+                <el-button
+                  v-if="isCustomSource(row.name)"
+                  size="small"
+                  type="danger"
+                  plain
+                  @click="deleteDatasource(row)"
+                >删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -219,13 +222,46 @@
         <el-button type="primary" :loading="savingDatasource" @click="saveDatasource">保存</el-button>
       </template>
     </el-dialog>
+
+    <!-- 添加自定义数据源弹窗 -->
+    <el-dialog
+      v-model="showAddDatasourceDialog"
+      title="添加自定义数据源"
+      width="500px"
+      destroy-on-close
+    >
+      <el-form :model="newDsForm" label-width="110px">
+        <el-form-item label="标识名">
+          <el-input v-model="newDsForm.name" placeholder="如: my_source (小写字母、数字、下划线)" />
+        </el-form-item>
+        <el-form-item label="显示名称">
+          <el-input v-model="newDsForm.display_name" placeholder="如: 我的数据源" />
+        </el-form-item>
+        <el-form-item label="类型">
+          <el-select v-model="newDsForm.api_type">
+            <el-option label="API" value="api" />
+            <el-option label="CSV导入" value="csv" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="API Key">
+          <el-input v-model="newDsForm.api_key" type="password" show-password placeholder="可选，后续也可在配置中填写" />
+        </el-form-item>
+        <el-form-item label="Base URL">
+          <el-input v-model="newDsForm.base_url" placeholder="可选，自定义API地址" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showAddDatasourceDialog = false">取消</el-button>
+        <el-button type="primary" :loading="savingNewDatasource" @click="createDatasource">添加</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { aiProvidersAPI, configAPI, importAPI } from '../services/api'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { StarFilled } from '@element-plus/icons-vue'
 
 const activeTab = ref('ai')
@@ -397,6 +433,65 @@ async function testDatasource(row) {
     ElMessage.error('连接测试失败')
   } finally {
     row._testing = false
+  }
+}
+
+// ====== 添加/删除自定义数据源 ======
+const showAddDatasourceDialog = ref(false)
+const savingNewDatasource = ref(false)
+const newDsForm = ref({ name: '', display_name: '', api_type: 'api', api_key: '', base_url: '' })
+
+const BUILTIN_SOURCES = new Set([
+  'google_maps', 'serpapi', 'hunter', 'volza', 'panjiva', 'importgenius',
+  'linkedin', 'zoominfo', 'apollo', 'clearbit', 'snov', '2gis'
+])
+
+function isCustomSource(name) {
+  return !BUILTIN_SOURCES.has(name)
+}
+
+function openAddDatasource() {
+  newDsForm.value = { name: '', display_name: '', api_type: 'api', api_key: '', base_url: '' }
+  showAddDatasourceDialog.value = true
+}
+
+async function createDatasource() {
+  if (!newDsForm.value.name || !newDsForm.value.display_name) {
+    ElMessage.warning('请填写标识名和显示名称')
+    return
+  }
+  savingNewDatasource.value = true
+  try {
+    const config = {}
+    if (newDsForm.value.api_key) config.api_key = newDsForm.value.api_key
+    if (newDsForm.value.base_url) config.base_url = newDsForm.value.base_url
+    await configAPI.createDatasource({
+      name: newDsForm.value.name,
+      display_name: newDsForm.value.display_name,
+      api_type: newDsForm.value.api_type,
+      config
+    })
+    ElMessage.success('数据源添加成功')
+    showAddDatasourceDialog.value = false
+    loadDatasources()
+  } catch (e) {
+    const msg = e.response?.data?.detail || '添加失败'
+    ElMessage.error(msg)
+  } finally {
+    savingNewDatasource.value = false
+  }
+}
+
+async function deleteDatasource(row) {
+  try {
+    await ElMessageBox.confirm(`确定删除数据源「${row.display_name}」？`, '删除确认', { type: 'warning' })
+    await configAPI.deleteDatasource(row.name)
+    ElMessage.success('已删除')
+    loadDatasources()
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error(e.response?.data?.detail || '删除失败')
+    }
   }
 }
 

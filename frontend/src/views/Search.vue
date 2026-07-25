@@ -248,8 +248,7 @@ const localSearched = ref(false)
 async function loadSources() {
   try {
     const sources = await importAPI.sources()
-    // 只展示支持搜索的数据源
-    availableSources.value = sources.filter(s => s.supports_search)
+    availableSources.value = sources.filter(s => s.enabled)
   } catch (e) {
     console.error('加载数据源失败', e)
   }

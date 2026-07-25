@@ -257,6 +257,16 @@ export const configAPI = {
   testDatasource(name) {
     return api.post(`/config/datasource/${name}/test`)
   },
+
+  // 添加自定义数据源
+  createDatasource(data) {
+    return api.post('/config/datasource', data)
+  },
+
+  // 删除自定义数据源
+  deleteDatasource(name) {
+    return api.delete(`/config/datasource/${name}`)
+  },
   
   // API使用统计
   apiUsage(days) {
