@@ -134,7 +134,23 @@ async def api_health():
 # 前端静态文件（必须在所有API路由之后注册，避免拦截API请求）
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 if FRONTEND_DIST.exists():
-    app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
+    # 挂载静态资源（JS/CSS/图片等）
+    assets_dir = FRONTEND_DIST / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+    # SPA catch-all：所有非API路径返回 index.html（支持前端路由）
+    from fastapi.responses import FileResponse
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """SPA fallback - 返回index.html让前端路由处理"""
+        # 如果请求的是实际存在的静态文件，直接返回
+        file_path = FRONTEND_DIST / full_path
+        if full_path and file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        # 否则返回index.html（SPA路由）
+        return FileResponse(str(FRONTEND_DIST / "index.html"))
 
 
 if __name__ == "__main__":
