@@ -415,13 +415,18 @@ onMounted(loadData)
   align-items: center;
   gap: 8px;
   padding: 10px;
-  background: #fafafa;
-  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #eef1f4;
+  border-radius: 8px;
 }
 
 .contact-item a {
-  color: #1890ff;
+  color: #2563eb;
   text-decoration: none;
+}
+
+.contact-item a:hover {
+  text-decoration: underline;
 }
 
 .outreach-result {

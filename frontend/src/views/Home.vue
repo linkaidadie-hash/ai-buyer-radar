@@ -192,7 +192,7 @@ function getInitials(name) {
   return name.slice(0, 2).toUpperCase()
 }
 
-const avatarColors = ['#6366f1', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b', '#3b82f6']
+const avatarColors = ['#2563eb', '#0d9488', '#4f46e5', '#d97706', '#0891b2', '#475569']
 function getAvatarBg(name) {
   if (!name) return avatarColors[0]
   const idx = name.charCodeAt(0) % avatarColors.length
@@ -300,8 +300,8 @@ function initCharts() {
         value: c.cnt,
         itemStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#6366f1' },
-            { offset: 1, color: '#8b5cf6' }
+            { offset: 0, color: '#3b82f6' },
+            { offset: 1, color: '#2563eb' }
           ]),
           borderRadius: [6, 6, 0, 0]
         }
@@ -357,19 +357,21 @@ onUnmounted(() => {
 /* ====== Hero ====== */
 .hero-section {
   position: relative;
-  border-radius: 20px;
-  padding: 48px 40px;
+  border-radius: 16px;
+  padding: 44px 40px;
   overflow: hidden;
-  background: linear-gradient(135deg, #0f1623 0%, #1e293b 100%);
-  color: white;
+  background: #ffffff;
+  border: 1px solid #e8eaed;
+  box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+  color: #1a2332;
 }
 
 .hero-bg-decoration {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.25) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.2) 0%, transparent 50%);
+    radial-gradient(ellipse at 15% 50%, rgba(37,99,235,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%, rgba(37,99,235,0.05) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -385,11 +387,11 @@ onUnmounted(() => {
   gap: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: rgba(255,255,255,0.7);
-  background: rgba(255,255,255,0.08);
+  color: #2563eb;
+  background: #eef4ff;
   padding: 6px 14px;
   border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid #dbe7ff;
   margin-bottom: 20px;
   letter-spacing: 0.03em;
 }
@@ -409,25 +411,23 @@ onUnmounted(() => {
 }
 
 .hero-content h1 {
-  font-size: 42px;
+  font-size: 40px;
   font-weight: 800;
   letter-spacing: -0.03em;
   margin-bottom: 8px;
-  background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #1a2332;
 }
 
 .hero-subtitle {
   font-size: 18px;
   font-weight: 500;
-  opacity: 0.85;
+  color: #475569;
   margin-bottom: 8px;
 }
 
 .hero-desc {
   font-size: 14px;
-  opacity: 0.5;
+  color: #8a94a3;
   margin-bottom: 32px;
 }
 
@@ -455,15 +455,15 @@ onUnmounted(() => {
 .stat-card {
   position: relative;
   background: white;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 14px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
-  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(16,24,40,0.04);
+  border: 1px solid #e8eaed;
   overflow: hidden;
-  transition: all 0.25s ease;
+  transition: box-shadow 0.2s ease;
   animation: slideUp 0.4s ease both;
   animation-delay: var(--delay, 0s);
 }
@@ -474,19 +474,11 @@ onUnmounted(() => {
 }
 
 .stat-card:hover {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(16,24,40,0.06);
 }
 
 .stat-glow {
-  position: absolute;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  top: -40px;
-  right: -30px;
-  pointer-events: none;
-  filter: blur(30px);
+  display: none;
 }
 
 .stat-icon-wrap {
@@ -497,7 +489,6 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .stat-body {

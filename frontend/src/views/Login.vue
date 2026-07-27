@@ -3,7 +3,7 @@
     <div class="login-card">
       <div class="login-header">
         <div class="login-logo">
-          <el-icon :size="32" color="#6366f1"><Aim /></el-icon>
+          <el-icon :size="32" color="#2563eb"><Aim /></el-icon>
         </div>
         <h1>AI采购商雷达</h1>
         <p>智能海外采购商发现与管理系统</p>
@@ -128,7 +128,7 @@ async function handleLogin() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0f1623 0%, #1e293b 50%, #0f1623 100%);
+  background: #f5f6f8;
   position: relative;
   overflow: hidden;
 }
@@ -139,7 +139,7 @@ async function handleLogin() {
   width: 600px;
   height: 600px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%);
   top: -200px;
   right: -100px;
   pointer-events: none;
@@ -151,7 +151,7 @@ async function handleLogin() {
   width: 400px;
   height: 400px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(37,99,235,0.05) 0%, transparent 70%);
   bottom: -100px;
   left: -100px;
   pointer-events: none;
@@ -160,10 +160,11 @@ async function handleLogin() {
 .login-card {
   width: 400px;
   max-width: 90vw;
-  background: rgba(255, 255, 255, 0.98);
-  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid #e8eaed;
+  border-radius: 16px;
   padding: 48px 40px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(16, 24, 40, 0.08);
   position: relative;
   z-index: 1;
 }
@@ -177,12 +178,12 @@ async function handleLogin() {
   width: 64px;
   height: 64px;
   margin: 0 auto 16px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: #2563eb;
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
 .login-logo .el-icon {
@@ -192,13 +193,13 @@ async function handleLogin() {
 .login-header h1 {
   font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: #1a2332;
   margin-bottom: 6px;
 }
 
 .login-header p {
   font-size: 13px;
-  color: #94a3b8;
+  color: #8a94a3;
 }
 
 .login-form {

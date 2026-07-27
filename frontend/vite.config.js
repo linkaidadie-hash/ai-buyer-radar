@@ -9,6 +9,18 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src')
     }
   },
+  build: {
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'echarts': ['echarts'],
+          'element-plus': ['element-plus'],
+          'vue-vendor': ['vue', 'vue-router', 'axios']
+        }
+      }
+    }
+  },
   server: {
     port: 5173,
     proxy: {

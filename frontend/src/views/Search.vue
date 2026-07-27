@@ -372,7 +372,7 @@ onMounted(loadSources)
   color: #67c23a;
 }
 .link {
-  color: #409eff;
+  color: #2563eb;
   text-decoration: none;
 }
 .link:hover {

@@ -216,7 +216,7 @@ const statusLabels = {
   invalid: '无效', blacklist: '黑名单'
 }
 
-const avatarColors = ['#6366f1', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b', '#3b82f6', '#10b981']
+const avatarColors = ['#2563eb', '#0d9488', '#4f46e5', '#d97706', '#0891b2', '#475569', '#059669']
 
 function statusLabel(status) { return statusLabels[status] || status }
 
@@ -323,8 +323,8 @@ onMounted(() => {
 .total-badge {
   font-size: 12px;
   font-weight: 600;
-  color: #6366f1;
-  background: rgba(99,102,241,0.1);
+  color: #2563eb;
+  background: #eef4ff;
   padding: 3px 10px;
   border-radius: 20px;
 }
@@ -444,7 +444,7 @@ onMounted(() => {
 
 :deep(.buyer-row):hover .row-arrow {
   transform: translateX(3px);
-  color: #6366f1;
+  color: #2563eb;
 }
 
 /* ====== 分页 ====== */
