@@ -56,6 +56,12 @@ const routes = [
     path: '/quote',
     name: 'Quote',
     component: () => import('../views/Quote.vue')
+  },
+  {
+    path: '/demo',
+    name: 'Demo',
+    component: () => import('../views/Demo.vue'),
+    meta: { noLayout: true }
   }
 ]
 

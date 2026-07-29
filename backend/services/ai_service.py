@@ -8,6 +8,50 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 
 
+# ============================================================
+# Unified AI Output Format
+# ============================================================
+# All AI outputs MUST include these three fields:
+# - intent:  what the buyer/user intends (str)
+# - confidence: how confident the AI is 0.0-1.0 (float)
+# - next_action: recommended next step (str)
+
+INTENT_OPTIONS = {
+    # Scorer intents
+    'high_value': '高质量采购商', 'medium_value': '中等价值',
+    'low_value': '低价值', 'not_buyer': '非采购商',
+    # Reply intents
+    'interested': '有兴趣', 'not_interested': '无兴趣',
+    'needs_quote': '需要报价', 'needs_sample': '需要样品',
+    'out_of_office': '不在办公室', 'unsubscribe': '退订',
+    'unclear': '需进一步沟通',
+    # Outreach intents
+    'first_contact': '首次联系', 'follow_up': '跟进',
+    'closing': '促成成交', 'nurture': '长期培育',
+}
+
+
+def wrap_ai_output(
+    content: Any,
+    intent: str,
+    confidence: float,
+    next_action: str,
+    **extra
+) -> Dict[str, Any]:
+    """Wrap any AI result into the unified output format.
+    
+    All AI endpoints return this format. Frontend can rely on
+    intent / confidence / next_action being present.
+    """
+    return {
+        'content': content,
+        'intent': intent,
+        'confidence': round(max(0.0, min(1.0, float(confidence))), 2),
+        'next_action': next_action,
+        **extra,
+    }
+
+
 class AIScorer:
     """AI采购商评分"""
     
@@ -448,3 +492,99 @@ class AIOutreachGenerator:
         except Exception as e:
             print(f"[AI] DeepSeek call failed: {e}")
         return None
+
+# ============================================================
+# AI Reply Analyzer
+# ============================================================
+
+class AIReplyAnalyzer:
+    """Analyze buyer reply messages using rule engine.
+
+    No LLM required - uses keyword matching and heuristics.
+    Output uses the unified format (intent, confidence, next_action).
+    """
+
+    INTENT_KEYWORDS = {
+        'interested': [
+            'interested', '感兴趣', '有兴趣', '是的',
+            'love to', 'would like', 'want to know more', '了解更多',
+            'please send', '请发', 'tell me more', '更多信息',
+            'looks good', '很满意', 'perfect',
+        ],
+        'not_interested': [
+            'not interested', 'no thanks', 'no thank', '不感兴趣', '不需',
+            'remove', 'unsubscribe', '退订', '不要再发', 'stop',
+            'not looking', 'not buying', '不买', '不需要',
+        ],
+        'needs_quote': [
+            'quote', 'price', '报价', '价格', 'cost', '费用',
+            'how much', 'fob', 'cif', 'moq', 'minimum order',
+            '多少钱', '怎么卖', '报价单',
+        ],
+        'needs_sample': [
+            'sample', '样品', 'sample order', '样单',
+            'send me a sample', '寄样品', '寄个样品',
+        ],
+        'out_of_office': [
+            'out of office', 'on vacation', 'away', 'leave',
+            '休假', '出差', '不在办公室', 'holiday',
+        ],
+    }
+
+    def analyze(self, reply_text: str) -> Dict[str, Any]:
+        """Analyze a buyer reply and return unified AI output.
+
+        Returns dict with: content, intent, confidence, next_action
+        """
+        if not reply_text or not reply_text.strip():
+            return wrap_ai_output(
+                content={'summary': '空回复'},
+                intent='unclear',
+                confidence=0.0,
+                next_action='手动跟进：客户未回复，建议更换渠道',
+            )
+
+        text_lower = reply_text.lower().strip()
+
+        scores = {}
+        for intent, keywords in self.INTENT_KEYWORDS.items():
+            match_count = sum(1 for kw in keywords if kw.lower() in text_lower)
+            if match_count > 0:
+                scores[intent] = match_count
+
+        if not scores:
+            if len(text_lower) < 10:
+                return wrap_ai_output(
+                    content={'summary': '回复太短，无法判断', 'text_length': len(reply_text)},
+                    intent='unclear',
+                    confidence=0.3,
+                    next_action='手动跟进：回复过短，建议电话确认',
+                )
+            return wrap_ai_output(
+                content={'summary': '需要人工判断', 'text_length': len(reply_text)},
+                intent='unclear',
+                confidence=0.4,
+                next_action='手动跟进：AI无法判断，建议人工阅读后跟进',
+            )
+
+        best_intent = max(scores, key=scores.get)
+        confidence = min(0.5 + scores[best_intent] * 0.15, 0.95)
+
+        next_action_map = {
+            'interested': '生成报价单并发送',
+            'not_interested': '标记为不感兴趣，3个月后再次跟进',
+            'needs_quote': '立即计算报价并发送报价单',
+            'needs_sample': '安排样品寄送（需确认地址）',
+            'out_of_office': '设置1周后自动跟进',
+        }
+
+        return wrap_ai_output(
+            content={
+                'summary': INTENT_OPTIONS.get(best_intent, best_intent),
+                'matched_keywords': scores[best_intent],
+                'text_length': len(reply_text),
+            },
+            intent=best_intent,
+            confidence=confidence,
+            next_action=next_action_map.get(best_intent, '手动跟进'),
+        )

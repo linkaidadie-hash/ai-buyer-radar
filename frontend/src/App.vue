@@ -41,6 +41,10 @@
             <el-icon><Message /></el-icon>
             <span>AI联系</span>
           </el-menu-item>
+          <el-menu-item index="/quote">
+            <el-icon><PriceTag /></el-icon>
+            <span>报价管理</span>
+          </el-menu-item>
           <el-menu-item index="/export">
             <el-icon><Download /></el-icon>
             <span>数据导出</span>
@@ -112,14 +116,14 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled, User, Upload, Search, ChatDotRound, Message, Download, Setting, UserFilled, ArrowDown } from '@element-plus/icons-vue'
+import { HomeFilled, User, Upload, Search, ChatDotRound, Message, Download, Setting, UserFilled, ArrowDown, PriceTag } from '@element-plus/icons-vue'
 import { authAPI } from './services/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const activeMenu = computed(() => route.path)
-const showLayout = computed(() => route.path !== '/login')
+const showLayout = computed(() => route.path !== '/login' && route.path !== '/demo')
 const currentUsername = ref(localStorage.getItem('username') || '用户')
 
 async function handleUserCommand(command) {

@@ -35,6 +35,11 @@
           </el-descriptions>
         </div>
 
+        <!-- 未选择采购商提示 -->
+        <div v-else class="hint-state">
+          <el-empty description="请选择采购商开始生成开发信" />
+        </div>
+
         <el-divider />
 
         <el-row :gutter="20">
@@ -220,5 +225,9 @@ function reset() {
 .linkedin-section h4 {
   margin-bottom: 10px;
   color: #666;
+}
+
+.hint-state {
+  padding: 40px 0;
 }
 </style>

@@ -1,0 +1,14 @@
+__pycache__
+*.pyc
+*.pyo
+.git
+.gitignore
+*.md
+docs/
+database/buyers.db
+logs/
+*.spec
+frontend/node_modules
+frontend/dist
+.idea
+.vscode

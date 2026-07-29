@@ -251,3 +251,33 @@ async def update_template(template_id: int, data: Dict[str, Any]):
             conn.execute(sql, values)
     
     return {'message': '更新成功'}
+
+# ============================================================
+# AI Reply Analysis (Part 4: Unified AI Output Format)
+# ============================================================
+
+class ReplyAnalyzeRequest(BaseModel):
+    buyer_id: int
+    reply_text: str
+
+
+@router.post("/analyze-reply")
+async def analyze_reply(request: ReplyAnalyzeRequest):
+    """AI分析客户回复 - 规则引擎，无需LLM
+
+    返回统一格式: intent, confidence, next_action
+    """
+    from services.ai_service import AIReplyAnalyzer
+
+    analyzer = AIReplyAnalyzer()
+    result = analyzer.analyze(request.reply_text)
+
+    # If buyer_id provided, update buyer status based on intent
+    if result['intent'] == 'interested':
+        with get_conn() as conn:
+            update_buyer(conn, request.buyer_id, {"status": "replied"})
+    elif result['intent'] == 'not_interested':
+        with get_conn() as conn:
+            update_buyer(conn, request.buyer_id, {"status": "invalid"})
+
+    return result

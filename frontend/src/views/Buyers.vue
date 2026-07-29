@@ -71,7 +71,7 @@
     <!-- 空数据引导 -->
     <div v-else-if="!loading && !loadError && pagination.total === 0 && buyers.length === 0" class="card empty-state">
       <el-icon :size="48" color="#94a3b8"><FolderOpened /></el-icon>
-      <h3>暂无采购商</h3>
+      <h3>开始搜索您的第一个海外采购商</h3>
       <p>搜索新商户，或导入已有客户数据</p>
       <div class="empty-actions">
         <el-button type="primary" @click="$router.push('/search')">搜索新商户</el-button>

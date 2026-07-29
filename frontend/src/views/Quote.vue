@@ -11,6 +11,11 @@
         </div>
         
         <el-table :data="filteredProducts" stripe style="width: 100%; margin-top: 15px">
+          <template #empty>
+            <el-empty description="请先添加产品">
+              <el-button type="primary" @click="$router.push('/settings')">前往设置</el-button>
+            </el-empty>
+          </template>
           <el-table-column prop="name_en" label="产品名称" min-width="180" />
           <el-table-column prop="sku" label="SKU" width="120" />
           <el-table-column prop="cost_price" label="成本(¥)" width="90" align="right">

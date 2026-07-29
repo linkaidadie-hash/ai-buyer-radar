@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: buyer-radar
+    restart: unless-stopped
+    ports:
+      - "8003:8000"
+    volumes:
+      - buyer_db:/app/database
+      - buyer_exports:/app/exports
+      - buyer_logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  buyer_db:
+  buyer_exports:
+  buyer_logs:

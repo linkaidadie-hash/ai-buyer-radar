@@ -5,11 +5,56 @@
       <div class="demo-logo">🌍 AI采购商雷达</div>
       <div class="demo-nav">
         <span class="active">搜索</span>
-        <span>采购商库</span>
-        <span>AI联系</span>
-        <span>CRM</span>
+        <span @click="goTo('/buyers')">采购商库</span>
+        <span @click="goTo('/outreach')">AI联系</span>
+        <span @click="goTo('/crm')">CRM</span>
+        <span @click="goTo('/quote')">报价</span>
+        <span @click="goTo('/demo')">演示指南</span>
       </div>
       <div class="demo-user">演示账号</div>
+    </div>
+
+    <!-- 演示流程引导 -->
+    <div class="demo-guide-bar">
+      <div class="guide-step" @click="goTo('/login')">
+        <span class="step-num">1</span>
+        <span class="step-label">登录</span>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="guide-step" @click="goTo('/')">
+        <span class="step-num">2</span>
+        <span class="step-label">首页概览</span>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="guide-step active-step" @click="goTo('/search')">
+        <span class="step-num">3</span>
+        <span class="step-label">搜索采购商</span>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="guide-step" @click="goTo('/buyers')">
+        <span class="step-num">4</span>
+        <span class="step-label">采购商列表</span>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="guide-step" @click="goTo('/outreach')">
+        <span class="step-num">5</span>
+        <span class="step-label">AI生成话术</span>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="guide-step" @click="goTo('/crm')">
+        <span class="step-num">6</span>
+        <span class="step-label">CRM跟进</span>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="guide-step" @click="goTo('/quote')">
+        <span class="step-num">7</span>
+        <span class="step-label">报价管理</span>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="guide-step" @click="goTo('/settings')">
+        <span class="step-num">8</span>
+        <span class="step-label">系统设置</span>
+      </div>
     </div>
 
     <!-- 主内容区 -->
@@ -179,6 +224,13 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+function goTo(path) {
+  router.push(path)
+}
 
 const placeholderText = '如：防晒衣、发饰、饰品...'
 const loading = ref(false)
@@ -320,6 +372,64 @@ function openWhatsApp(buyer) {
 .demo-user {
   font-size: 12px;
   opacity: 0.7;
+}
+
+/* 演示流程引导 */
+.demo-guide-bar {
+  background: #fff;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.guide-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-size: 13px;
+  color: #666;
+}
+
+.guide-step:hover {
+  background: #f0f7ff;
+  color: #1890ff;
+}
+
+.guide-step.active-step {
+  background: #1890ff;
+  color: #fff;
+}
+
+.step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e6f7ff;
+  color: #1890ff;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.guide-step.active-step .step-num {
+  background: rgba(255,255,255,0.3);
+  color: #fff;
+}
+
+.step-arrow {
+  color: #d9d9d9;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 /* 主内容区 */

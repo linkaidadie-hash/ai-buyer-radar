@@ -37,7 +37,7 @@
           </el-table-column>
         </el-table>
       </div>
-      <el-empty v-else description="暂无待跟进记录" />
+      <el-empty v-else description="客户回复后自动生成跟进任务" />
     </div>
 
     <!-- 最近跟进 -->
@@ -68,7 +68,7 @@
           </el-table-column>
         </el-table>
       </div>
-      <el-empty v-else description="暂无跟进记录" />
+      <el-empty v-else description="还没有沟通记录，复制客户回复让AI帮您分析" />
     </div>
 
     <!-- 全部采购商 -->

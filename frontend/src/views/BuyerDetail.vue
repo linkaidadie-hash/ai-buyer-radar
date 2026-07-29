@@ -1,6 +1,13 @@
 <template>
   <div class="buyer-detail" v-loading="loading">
     <div v-if="buyer" class="detail-content">
+      <!-- 返回导航 -->
+      <div class="back-nav">
+        <el-button text @click="$router.back()">
+          <el-icon><ArrowLeft /></el-icon> 返回列表
+        </el-button>
+      </div>
+
       <!-- 基本信息 -->
       <div class="card">
         <div class="card-header">
@@ -83,11 +90,11 @@
       </div>
 
       <!-- 进口记录 -->
-      <div class="card" v-if="buyer.shipments?.length">
+      <div class="card">
         <div class="card-header">
-          <h3>进口记录 ({{ buyer.shipments.length }})</h3>
+          <h3>进口记录<span v-if="buyer.shipments?.length"> ({{ buyer.shipments.length }})</span></h3>
         </div>
-        <el-table :data="buyer.shipments" size="small">
+        <el-table v-if="buyer.shipments?.length" :data="buyer.shipments" size="small">
           <el-table-column prop="product" label="产品" />
           <el-table-column prop="hs_code" label="HS Code" width="100" />
           <el-table-column prop="supplier" label="供应商" />
@@ -96,6 +103,7 @@
           <el-table-column prop="quantity" label="数量" width="80" />
           <el-table-column prop="value" label="价值" width="100" />
         </el-table>
+        <el-empty v-else description="暂无进口记录" />
       </div>
 
       <!-- 联系人 -->
@@ -111,7 +119,7 @@
           <el-table-column prop="phone" label="电话" />
           <el-table-column prop="linkedin" label="LinkedIn" />
         </el-table>
-        <el-empty v-else description="暂无联系人" />
+        <el-empty v-else description="添加第一个联系人" />
       </div>
 
       <!-- 跟进记录 -->
@@ -126,7 +134,7 @@
           <el-table-column prop="content" label="内容" />
           <el-table-column prop="result" label="结果" width="80" />
         </el-table>
-        <el-empty v-else description="暂无跟进记录" />
+        <el-empty v-else description="记录第一次沟通" />
       </div>
 
       <!-- AI分析 -->
@@ -241,7 +249,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { buyersAPI, aiAPI } from '../services/api'
 import { ElMessage } from 'element-plus'
-import { Message, Phone, ChatDotRound, Link, Connection } from '@element-plus/icons-vue'
+import { Message, Phone, ChatDotRound, Link, Connection, ArrowLeft } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const loading = ref(false)
@@ -443,5 +451,19 @@ onMounted(loadData)
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.back-nav {
+  margin-bottom: 16px;
+}
+
+.back-nav .el-button {
+  padding: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.back-nav .el-button:hover {
+  color: #2563eb;
 }
 </style>
